@@ -1,8 +1,10 @@
 # kibi
 
-A self-hosted coding agent optimized for small local models (Qwen 9–35B). Runs entirely on a consumer laptop — no cloud inference needed.
+A self-hosted coding agent optimized for small local models. Runs entirely on consumer-grade hardware — no cloud inference needed.
 
 Built on [pi](https://github.com/badlogic/pi-mono) and [little-coder](https://github.com/itayinbarr/little-coder), with small-model-specific extensions and prompt tuning.
+
+Optimized for dual-GPU setups (e.g. NVIDIA V100 32GB + RTX 3080 20GB), leveraging expert/attention splitting for efficient MoE inference.
 
 ## Quick Start
 

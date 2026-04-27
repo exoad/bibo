@@ -1,21 +1,22 @@
 # kibi
 
-My personal coding agent — a self-hosted build on [pi](https://github.com/badlogic/pi-mono) and [little-coder](https://github.com/itayinbarr/little-coder), tuned for small local models.
+My personal coding agent tuned for local models that runs on consumer grade hardware.
 
-Runs entirely on my hardware — no cloud inference needed.
+## My Server
 
-## My Setup
+Very frankenstein
 
-- **GPU 1:** NVIDIA V100 (SXM2) 32GB — attention layers
-- **GPU 2:** RTX 3080 (20GB MOD) — MoE expert layers
+- **GPU 1:** NVIDIA V100 (SXM2) 32GB for attention layers (bought off eBay)
+- **GPU 2:** RTX 3080 (20GB MOD) for MoE expert layers (bought off eBay)
 - **CPU:** AMD Ryzen 5 7500X3D
-- **RAM:** 16GB DDR5
-- **Inference:** custom-compiled llama.cpp (not prebuilt — hand-tuned for better performance)
+- **RAM:** 16GB DDR5 (The X3D suffices for RAM shortage and single channel implications D:)
+
+> Also compile llama.cpp yourself for better custom tailoring!
 
 ## Quick Start
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/exoad/kibi.git
 cd kibi
 npm install
 ```

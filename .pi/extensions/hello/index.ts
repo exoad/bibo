@@ -1,4 +1,5 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type { Component, TUI, Theme } from "@mariozechner/pi-tui";
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -22,22 +23,41 @@ function formatTime(date: Date): string {
   return `${hour12}:${m}:${s} ${ampm}`;
 }
 
-function updateGreeting(ctx: ExtensionAPI["ui"]): void {
+function formatUptime(ms: number): string {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  if (h > 0) return `${h}h ${m % 60}m`;
+  if (m > 0) return `${m}m ${s % 60}s`;
+  return `${s}s`;
+}
+
+let sessionStart = Date.now();
+
+function greetingLine(): string {
   const now = new Date();
-  const line = "  " + greeting() + "  " + formatDate(now) + "  " + formatTime(now);
-  ctx.setWidget("greeting", [line], { placement: "above" });
+  const uptime = formatUptime(Date.now() - sessionStart);
+  return "  " + greeting() + "  " + formatDate(now) + "  " + formatTime(now) + "  " + uptime;
+}
+
+function greetingComponent(tui: TUI, _theme: Theme): Component & { dispose?(): void } {
+  const render = () => {
+    tui.setWidget("greeting", [greetingLine()], { placement: "above" });
+    tui.requestRender();
+  };
+
+  const timer = setInterval(render, 1000);
+
+  return {
+    render: () => [greetingLine()],
+    dispose: () => clearInterval(timer),
+  };
 }
 
 export default function (pi: ExtensionAPI) {
-  let timer: ReturnType<typeof setInterval> | undefined;
-
   pi.on("session_start", async (_event, ctx) => {
-    updateGreeting(ctx.ui);
+    sessionStart = Date.now();
+    ctx.ui.setWidget("greeting", greetingComponent);
     ctx.ui.notify("kibi scaffold loaded", "info");
-    timer = setInterval(() => updateGreeting(ctx.ui), 1000);
-  });
-
-  pi.on("session_shutdown", async () => {
-    if (timer) clearInterval(timer);
   });
 }

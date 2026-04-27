@@ -12,21 +12,6 @@ cd kibi
 npm install
 ```
 
-### Serve a model
-
-**llama.cpp** (recommended):
-```bash
-# Build llama.cpp, download a GGUF, then serve:
-build/bin/llama-server -m ~/models/qwen.gguf --host 127.0.0.1 --port 8888 --jinja
-```
-
-**Ollama** (simpler):
-```bash
-ollama pull qwen3.5
-```
-
-**Cloud** — set any provider's API key and use `--model provider/name`.
-
 ### Run
 
 ```bash

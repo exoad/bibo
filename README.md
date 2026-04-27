@@ -7,8 +7,8 @@ My personal coding agent tuned for local models that runs on consumer grade hard
 Very frankenstein
 
 - **GPU 1:** NVIDIA V100 SXM2 (w/ PCIe Adaptor) 32GB for attention layers (bought off eBay)
-- **GPU 2:** RTX 3080 (20GB MOD) for MoE expert layers (bought off eBay)
-- **CPU:** AMD Ryzen 5 7500X3D
+- **GPU 2:** NVIDIA RTX 3080 (20GB MOD) for MoE expert layers (bought off eBay)
+- **CPU:** AMD Ryzen 5 7500X3D 
 - **RAM:** 16GB DDR5 (The X3D suffices for RAM shortage and single channel implications D:)
 
 Currently running Qwen-3.6-35B-A3B Q5 with llama.cpp.

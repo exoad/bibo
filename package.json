@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@mariozechner/pi-coding-agent": "^0.68.1",
+    "@mariozechner/pi-coding-agent": "^0.70.2",
     "@sinclair/typebox": "^0.34.49",
     "playwright": "^1.59.1"
   },

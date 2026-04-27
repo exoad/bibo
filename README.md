@@ -1,10 +1,8 @@
 # kibi
 
-A self-hosted coding agent optimized for small local models. Runs entirely on consumer-grade hardware — no cloud inference needed.
+My personal coding agent — a self-hosted build on [pi](https://github.com/badlogic/pi-mono) and [little-coder](https://github.com/itayinbarr/little-coder), tuned for small local models.
 
-Built on [pi](https://github.com/badlogic/pi-mono) and [little-coder](https://github.com/itayinbarr/little-coder), with small-model-specific extensions and prompt tuning.
-
-Optimized for dual-GPU setups (e.g. NVIDIA V100 32GB + RTX 3080 20GB), leveraging expert/attention splitting for efficient MoE inference.
+Runs entirely on my hardware: NVIDIA V100 (SXM2) 32GB + RTX 3080 (20GB MOD), leveraging expert/attention splitting for efficient MoE inference. No cloud inference needed.
 
 ## Quick Start
 

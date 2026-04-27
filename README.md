@@ -11,6 +11,8 @@ Very frankenstein
 - **CPU:** AMD Ryzen 5 7500X3D
 - **RAM:** 16GB DDR5 (The X3D suffices for RAM shortage and single channel implications D:)
 
+Currently running Qwen-3.6-35B-A3B Q5 with llama.cpp
+
 > Also compile llama.cpp yourself for better custom tailoring!
 
 ## Quick Start

@@ -1,0 +1,26 @@
+{
+  "compaction": { "enabled": true },
+  "retry": { "enabled": true, "maxRetries": 2 },
+  "kibi": {
+    "default_model_profile": {
+      "context_limit": 131072,
+      "max_tokens": 4096,
+      "thinking_budget": 2048,
+      "skill_token_budget": 300,
+      "knowledge_token_budget": 200,
+      "system_prompt_budget": 0,
+      "max_retries": 1,
+      "temperature": 0.3
+    },
+    "model_profiles": {
+      "jackbox/kibi-qwen3.6": {
+        "context_limit": 131072,
+        "max_tokens": 4096,
+        "thinking_budget": 2048,
+        "skill_token_budget": 300,
+        "knowledge_token_budget": 200,
+        "temperature": 0.3
+      }
+    }
+  }
+}

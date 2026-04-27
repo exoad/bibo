@@ -2,7 +2,14 @@
 
 My personal coding agent — a self-hosted build on [pi](https://github.com/badlogic/pi-mono) and [little-coder](https://github.com/itayinbarr/little-coder), tuned for small local models.
 
-Runs entirely on my hardware: NVIDIA V100 (SXM2) 32GB + RTX 3080 (20GB MOD), leveraging expert/attention splitting for efficient MoE inference. No cloud inference needed.
+Runs entirely on my hardware — no cloud inference needed.
+
+## My Setup
+
+- **GPU:** NVIDIA V100 (SXM2) 32GB + RTX 3080 (20GB MOD) — expert/attention splitting for MoE inference
+- **CPU:** AMD Ryzen 5 7500X3D
+- **RAM:** 16GB DDR5
+- **Inference:** custom-compiled llama.cpp (not prebuilt — hand-tuned for better performance)
 
 ## Quick Start
 

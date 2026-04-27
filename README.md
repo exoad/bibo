@@ -2,6 +2,8 @@
 
 My personal coding agent tuned for local models that runs on consumer grade hardware.
 
+Fortified with industry grade system prompts from Claude & OpenCode :)
+
 ## My Server
 
 Very frankenstein

@@ -7,6 +7,12 @@ function greeting(): string {
   return "Good Evening";
 }
 
+function formatDate(date: Date): string {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  return `${days[date.getDay()]} ${months[date.getMonth()]} ${date.getDate()}`;
+}
+
 function formatTime(date: Date): string {
   const h = date.getHours();
   const m = String(date.getMinutes()).padStart(2, "0");
@@ -16,10 +22,22 @@ function formatTime(date: Date): string {
   return `${hour12}:${m}:${s} ${ampm}`;
 }
 
+function updateGreeting(ctx: ExtensionAPI["ui"]): void {
+  const now = new Date();
+  const line = "  " + greeting() + "  " + formatDate(now) + "  " + formatTime(now);
+  ctx.setWidget("greeting", [line], { placement: "above" });
+}
+
 export default function (pi: ExtensionAPI) {
+  let timer: ReturnType<typeof setInterval> | undefined;
+
   pi.on("session_start", async (_event, ctx) => {
-    const now = new Date();
-    ctx.ui.setWidget("greeting", ["  " + greeting() + " | " + formatTime(now)], { placement: "above" });
+    updateGreeting(ctx.ui);
     ctx.ui.notify("kibi scaffold loaded", "info");
+    timer = setInterval(() => updateGreeting(ctx.ui), 1000);
+  });
+
+  pi.on("session_shutdown", async () => {
+    if (timer) clearInterval(timer);
   });
 }

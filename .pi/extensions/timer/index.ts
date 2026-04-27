@@ -43,7 +43,7 @@ export default function (pi: ExtensionAPI) {
     state.marks = [];
     state.currentTask = undefined;
     state.currentTaskStart = undefined;
-    ctx.ui.notify(`⏱ Timer started — session began at ${new Date().toISOString()}`, "info");
+    // Timer started — time shown in greeting widget
   });
 
   pi.on("session_shutdown", async () => {

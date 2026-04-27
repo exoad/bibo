@@ -10,9 +10,10 @@ function greeting(): string {
 function formatTime(date: Date): string {
   const h = date.getHours();
   const m = String(date.getMinutes()).padStart(2, "0");
+  const s = String(date.getSeconds()).padStart(2, "0");
   const ampm = h >= 12 ? "PM" : "AM";
   const hour12 = h % 12 || 12;
-  return `${hour12}:${m} ${ampm}`;
+  return `${hour12}:${m}:${s} ${ampm}`;
 }
 
 export default function (pi: ExtensionAPI) {

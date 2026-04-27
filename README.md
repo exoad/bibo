@@ -6,7 +6,8 @@ Runs entirely on my hardware — no cloud inference needed.
 
 ## My Setup
 
-- **GPU:** NVIDIA V100 (SXM2) 32GB + RTX 3080 (20GB MOD) — expert/attention splitting for MoE inference
+- **GPU 1:** NVIDIA V100 (SXM2) 32GB — attention layers
+- **GPU 2:** RTX 3080 (20GB MOD) — MoE expert layers
 - **CPU:** AMD Ryzen 5 7500X3D
 - **RAM:** 16GB DDR5
 - **Inference:** custom-compiled llama.cpp (not prebuilt — hand-tuned for better performance)

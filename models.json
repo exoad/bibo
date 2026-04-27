@@ -1,0 +1,20 @@
+{
+  "providers": {
+    "jackbox": {
+      "api": "openai-completions",
+      "baseUrl": "http://127.0.0.1:6969/v1",
+      "apiKey": "LLAMACPP_API_KEY",
+      "models": [
+        {
+          "id": "kibi-qwen3.6",
+          "name": "Kibi Qwen3.6 (jackbox)",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 131072,
+          "maxTokens": 4096,
+          "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+        }
+      ]
+    }
+  }
+}

@@ -34,7 +34,7 @@ async function extractPageText(url: string): Promise<string> {
   const browser = await chromium.launch({ headless: true });
   try {
     const ctx = await browser.newContext({
-      userAgent: "Mozilla/5.0 (kibi research agent)",
+      userAgent: "Mozilla/5.0 (bibo research agent)",
       viewport: { width: 1280, height: 900 },
     });
     const page = await ctx.newPage();

@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // Port of local/config.py::MODEL_PROFILES + get_model_profile with
-// benchmark_overrides. Reads .pi/settings.json's kibi.model_profiles
+// benchmark_overrides. Reads .pi/settings.json's bibo.model_profiles
 // block, applies the matching per-model profile (plus benchmark_overrides
 // when LITTLE_CODER_BENCHMARK=terminal_bench|gaia is set), and publishes
 // the resolved values on event.systemPromptOptions.littleCoder so the
@@ -50,8 +50,8 @@ function loadSettings(): void {
     if (!existsSync(p)) continue;
     try {
       const raw = JSON.parse(readFileSync(p, "utf-8"));
-      if (raw && typeof raw === "object" && raw.kibi) {
-        settings = raw.kibi as LittleCoderSettings;
+      if (raw && typeof raw === "object" && raw.bibo) {
+        settings = raw.bibo as LittleCoderSettings;
         return;
       }
     } catch {
@@ -131,7 +131,7 @@ export default function (pi: ExtensionAPI) {
   // Inject the profile's temperature onto the outgoing provider payload.
   // Without this, pi-ai uses the provider default (typically ~0.8 for
   // jackbox), which adds measurable stochastic variance on hard
-  // algorithmic exercises. Matches kibi's profiles[].temperature=0.3.
+  // algorithmic exercises. Matches bibo's profiles[].temperature=0.3.
   //
   // IMPORTANT: pi's runner passes payload by reference but only adopts
   // *returned* values. Mutating in place is discarded between handlers, so

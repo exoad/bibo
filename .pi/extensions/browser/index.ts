@@ -66,7 +66,7 @@ async function ensureSession(): Promise<BrowserSession> {
     const playwright: any = await import("playwright" as any);
     const browser = await playwright.chromium.launch({ headless: !headful() });
     const context = await browser.newContext({
-      userAgent: "Mozilla/5.0 (kibi research agent)",
+      userAgent: "Mozilla/5.0 (bibo research agent)",
       viewport: { width: 1280, height: 900 },
     });
     const page = await context.newPage();

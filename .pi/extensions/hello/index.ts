@@ -1,5 +1,6 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import type { Component, TUI, Theme } from "@mariozechner/pi-tui";
+import type { Component, TUI } from "@mariozechner/pi-tui";
+import type { Theme } from "@mariozechner/pi-coding-agent";
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -41,23 +42,22 @@ function greetingLine(): string {
 }
 
 function greetingComponent(tui: TUI, _theme: Theme): Component & { dispose?(): void } {
-  const render = () => {
-    tui.setWidget("greeting", [greetingLine()], { placement: "above" });
+  const timer = setInterval(() => {
     tui.requestRender();
-  };
-
-  const timer = setInterval(render, 1000);
+  }, 1000);
 
   return {
-    render: () => [greetingLine()],
+    render: (_width: number) => [greetingLine()],
+    invalidate: () => {},
     dispose: () => clearInterval(timer),
   };
 }
 
 export default function (pi: ExtensionAPI) {
   pi.on("session_start", async (_event, ctx) => {
+    if (!ctx.hasUI) return;
     sessionStart = Date.now();
     ctx.ui.setWidget("greeting", greetingComponent);
-    ctx.ui.notify("kibi scaffold loaded", "info");
+    ctx.ui.notify("bibo scaffold loaded", "info");
   });
 }

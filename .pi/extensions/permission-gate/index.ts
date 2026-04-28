@@ -4,13 +4,13 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 // commands not matching the whitelist are blocked in "auto" mode. In
 // "accept-all" mode all commands pass (benchmark runs set this explicitly).
 // Write/Edit confirmations are deferred to the TUI's own prompt; we simply
-// add an extra guardrail on bash here to match kibi's behavior.
+// add an extra guardrail on bash here to match bibo's behavior.
 
 const SAFE_PREFIXES: readonly string[] = [
   "ls", "cat", "head", "tail", "wc", "pwd", "echo", "printf", "date",
   "cd", "which", "type", "env", "printenv", "uname", "whoami", "id",
   "readlink", "stat", "file",
-  "rm",
+  "rm", "mkdir", "mkdir -p",
   "git log", "git status", "git diff", "git show", "git branch",
   "git remote", "git stash list", "git tag",
   "find ", "grep ", "rg ", "ag ", "fd ",

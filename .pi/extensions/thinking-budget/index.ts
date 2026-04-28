@@ -1,7 +1,7 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
 // Port of the thinking-budget cap + partial-trace reuse logic from
-// providers.py. kibi's Python implementation aborts the stream
+// providers.py. bibo's Python implementation aborts the stream
 // mid-flight when thinking tokens cross the budget, re-injects the partial
 // trace as assistant context, and retries with thinking disabled. Pi's
 // AgentSession doesn't expose mid-stream abort-and-replace, so we implement
@@ -17,7 +17,7 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 // to an implementation" — the concrete savings of preserving the partial
 // trace are lost, but the commit-to-action pressure is the same.
 
-const DEFAULT_BUDGET = 2048;
+const DEFAULT_BUDGET = 4096;
 
 // Per-turn rolling state
 let thinkingChars = 0;

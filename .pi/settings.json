@@ -1,7 +1,10 @@
 {
   "compaction": { "enabled": true },
   "retry": { "enabled": true, "maxRetries": 2 },
-  "kibi": {
+  "packages": [
+    "npm:context-mode"
+  ],
+  "bibo": {
     "default_model_profile": {
       "context_limit": 131072,
       "max_tokens": 4096,
@@ -13,7 +16,7 @@
       "temperature": 0.3
     },
     "model_profiles": {
-      "jackbox/kibi-qwen3.6": {
+      "jackbox/bibo-qwen3.6": {
         "context_limit": 131072,
         "max_tokens": 4096,
         "thinking_budget": 2048,

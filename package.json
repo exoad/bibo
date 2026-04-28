@@ -1,5 +1,5 @@
 {
-  "name": "kibi",
+  "name": "bibo",
   "version": "0.1.24",
   "description": "A pi-based coding agent optimized for small local language models.",
   "private": true,

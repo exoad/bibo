@@ -1,19 +1,19 @@
-# SELF.md — kibi Internal Architecture Reference
+# SELF.md — bibo Internal Architecture Reference
 
-**This file is the living document of how kibi works internally.**
+**This file is the living document of how bibo works internally.**
 It is NOT included in the system prompt by default — I must read it when asked to modify or understand my own scaffolding.
 
 ---
 
-## 1. What is kibi?
+## 1. What is bibo?
 
-kibi is a **pi-based coding agent** optimized for small local language models (e.g., Qwen3.6-35B-A3B running via llama.cpp). It is a TypeScript project that extends `@mariozechner/pi-coding-agent` (v0.68.1) with a suite of extensions, skills, and configuration.
+bibo is a **pi-based coding agent** optimized for small local language models (e.g., Qwen3.6-35B-A3B running via llama.cpp). It is a TypeScript project that extends `@mariozechner/pi-coding-agent` (v0.68.1) with a suite of extensions, skills, and configuration.
 
-- **Package**: `kibi` v0.1.24
+- **Package**: `bibo` v0.1.24
 - **Dependency**: `@mariozechner/pi-coding-agent` ^0.68.1
 - **Runtime**: Node.js, TypeScript (compiled via jiti at runtime)
 - **Provider**: `jackbox` (llama.cpp on `http://127.0.0.1:6969/v1`)
-- **Model**: `kibi-qwen3.6` (128K context, 4096 max tokens, reasoning enabled)
+- **Model**: `bibo-qwen3.6` (128K context, 4096 max tokens, reasoning enabled)
 
 ---
 
@@ -100,7 +100,7 @@ Extensions are loaded in filesystem order (alphabetical by directory name). The 
 {
   "compaction": { "enabled": true },
   "retry": { "enabled": true, "maxRetries": 2 },
-  "kibi": {
+  "bibo": {
     "default_model_profile": {
       "context_limit": 131072,
       "max_tokens": 4096,
@@ -112,7 +112,7 @@ Extensions are loaded in filesystem order (alphabetical by directory name). The 
       "temperature": 0.3
     },
     "model_profiles": {
-      "jackbox/kibi-qwen3.6": {
+      "jackbox/bibo-qwen3.6": {
         "context_limit": 131072,
         "max_tokens": 4096,
         "thinking_budget": 2048,
@@ -374,7 +374,7 @@ curl, wget, wget --spider
 
 ## 14. Claude Code Inspired Principles
 
-These principles were extracted from Claude Code's system prompts (via [Piebald AI's repository](https://github.com/Piebald-AI/claude-code-system-prompts)) and adapted for kibi. They represent best practices from one of the most capable coding agents ever built.
+These principles were extracted from Claude Code's system prompts (via [Piebald AI's repository](https://github.com/Piebald-AI/claude-code-system-prompts)) and adapted for bibo. They represent best practices from one of the most capable coding agents ever built.
 
 ### Communication Style
 - **State what you're doing before your first tool call** — one sentence.
@@ -456,7 +456,7 @@ These principles were extracted from Claude Code's system prompts (via [Piebald 
 
 ---
 
-## 15. How to Modify kibi
+## 15. How to Modify bibo
 
 ### Adding a Tool Skill
 1. Create `skills/tools/<name>.md` with YAML frontmatter
@@ -475,7 +475,7 @@ These principles were extracted from Claude Code's system prompts (via [Piebald 
 4. Optionally register tools via `pi.registerTool()`
 
 ### Modifying Model Profiles
-1. Edit `.pi/settings.json` → `kibi.model_profiles`
+1. Edit `.pi/settings.json` → `bibo.model_profiles`
 2. Or set `LITTLE_CODER_BENCHMARK` for benchmark-specific overrides
 
 ### Changing System Prompt

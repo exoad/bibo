@@ -1,7 +1,7 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 
-// Timer extension — adds a temporal dimension to kibi.
+// Timer extension — adds a temporal dimension to bibo.
 // Tracks session start, task-level marks, and elapsed time reporting.
 // Provides three tools: TimeElapsed, MarkStart, MarkEnd.
 

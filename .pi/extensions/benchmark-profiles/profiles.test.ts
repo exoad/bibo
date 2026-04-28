@@ -37,17 +37,17 @@ function resolveProfile(
 }
 
 describe("benchmark-profiles resolution against real settings.json", () => {
-  const settings = JSON.parse(readFileSync(settingsPath, "utf-8")).kibi;
+  const settings = JSON.parse(readFileSync(settingsPath, "utf-8")).bibo;
 
-  it("resolves base profile for jackbox/kibi-qwen3.6", () => {
-    const p = resolveProfile(settings, "jackbox/kibi-qwen3.6");
+  it("resolves base profile for jackbox/bibo-qwen3.6", () => {
+    const p = resolveProfile(settings, "jackbox/bibo-qwen3.6");
     expect(p.thinking_budget).toBe(2048);
     expect(p.context_limit).toBe(32768);
     expect(p.max_turns).toBeUndefined();
   });
 
   it("applies terminal_bench overrides", () => {
-    const p = resolveProfile(settings, "jackbox/kibi-qwen3.6", "terminal_bench");
+    const p = resolveProfile(settings, "jackbox/bibo-qwen3.6", "terminal_bench");
     expect(p.thinking_budget).toBe(3000);
     expect(p.temperature).toBe(0.2);
     expect(p.max_turns).toBe(40);
@@ -56,7 +56,7 @@ describe("benchmark-profiles resolution against real settings.json", () => {
   });
 
   it("applies gaia overrides", () => {
-    const p = resolveProfile(settings, "jackbox/kibi-qwen3.6", "gaia");
+    const p = resolveProfile(settings, "jackbox/bibo-qwen3.6", "gaia");
     expect(p.thinking_budget).toBe(2000);
     expect(p.temperature).toBe(0.4);
     expect(p.max_turns).toBe(30);
@@ -71,7 +71,7 @@ describe("benchmark-profiles resolution against real settings.json", () => {
   });
 
   it("unknown benchmark name yields base profile unchanged", () => {
-    const p = resolveProfile(settings, "jackbox/kibi-qwen3.6", "totally_made_up");
+    const p = resolveProfile(settings, "jackbox/bibo-qwen3.6", "totally_made_up");
     expect(p.thinking_budget).toBe(2048);
     expect(p.max_turns).toBeUndefined();
   });

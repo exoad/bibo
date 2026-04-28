@@ -1,4 +1,4 @@
-# kibi
+# bibo
 
 My personal coding agent tuned for local models that runs on consumer grade hardware.
 
@@ -20,8 +20,8 @@ Currently running Qwen-3.6-35B-A3B Q5 with llama.cpp.
 ## Quick Start
 
 ```bash
-git clone https://github.com/exoad/kibi.git
-cd kibi
+git clone https://github.com/exoad/bibo.git
+cd bibo
 npm install
 ```
 

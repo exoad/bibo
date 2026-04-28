@@ -1,4 +1,4 @@
-// Minimal YAML frontmatter parser — enough for the fields kibi uses.
+// Minimal YAML frontmatter parser — enough for the fields bibo uses.
 // Mirrors skill/loader.py::_parse_skill_file's behavior, no external deps.
 
 export interface Frontmatter {

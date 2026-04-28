@@ -10,8 +10,8 @@ export default function (pi: ExtensionAPI) {
     api: "openai-completions",
     models: [
       {
-        id: "kibi-qwen3.6",
-        name: "Kibi Qwen3.6 (jackbox)",
+        id: "bibo-qwen3.6",
+        name: "Bibo Qwen3.6 (jackbox)",
         reasoning: true,
         input: ["text"],
         contextWindow: 131072,

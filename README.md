@@ -1,8 +1,28 @@
+<div align="center">
+
+![bibo](./icon.png)
+
 # bibo
 
-My personal coding agent tuned for local models that runs on consumer grade hardware.
+---
 
-Fortified with industry grade system prompts from Claude & OpenCode :)
+*A coding agent for local models on consumer hardware*
+
+---
+
+Fortified with industry-grade system prompts from Claude & OpenCode
+
+</div>
+
+---
+
+<div align="center">
+
+![sc](./sc.png)
+
+</div>
+
+---
 
 ## My Server
 

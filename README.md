@@ -44,6 +44,47 @@ export LLAMACPP_API_KEY=noop # does not matter if you are running locally
 | `SELF.md` | Internal architecture reference |
 | `.pi/settings.json` | Per-model profiles, compaction, retry settings |
 
+## Custom Extensions & Skills
+
+**Local extensions** (`.pi/extensions/`):
+- `benchmark-profiles` — profiling benchmarks
+- `breathing-border` — animated chatbox border
+- `browser` — browser extraction
+- `browser-extract-retention` — retention-aware extraction
+- `checkpoint` — session checkpointing
+- `context-mode` — context management (inlined from npm)
+- `cost-tracker` — fake cost counter
+- `evidence` — evidence collection
+- `evidence-compact` — compact evidence bridge
+- `extra-tools` — additional tool integrations
+- `hello` — greeting widget
+- `knowledge-inject` — knowledge injection
+- `llama-cpp-provider` — llama.cpp model provider
+- `output-parser` — structured output parsing
+- `permission-gate` — tool permission gating
+- `quality-monitor` — repeated tool call detection
+- `shell-session` — persistent shell sessions
+- `skill-inject` — skill injection
+- `thinking-budget` — thinking token budget
+- `timer` — session timer
+- `tool-gating` — tool access control
+- `turn-cap` — turn limiting
+- `write-guard` — write operation protection
+
+**NPM packages** (`.pi/settings.json`):
+- `@feniix/pi-code-reasoning` — code reasoning
+- `pi-gsd` — GSD workflow system
+- `pi-web-access` — web search/fetch
+- `pi-markdown-preview` — markdown preview
+- `@rhobot-dev/rho` — rho agent framework
+- `pi-token-burden` — token budgeting
+- `@feniix/pi-statusline` — statusline widget
+- `pi-review-loop` — automated code review
+- `pi-quests` — quest/task management
+- `pi-tool-display` — tool display
+- `pi-mermaid` — mermaid diagrams
+- `pi-rtk-optimizer` — RTK optimizer
+
 ## Customization
 
 - **Extensions** — each under `.pi/extensions/<name>/`. Disable by removing the directory or editing `.pi/settings.json`. Add your own as a TypeScript module.

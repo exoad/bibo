@@ -12,7 +12,13 @@
           "input": ["text"],
           "contextWindow": 131072,
           "maxTokens": 4096,
-          "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+        {
+            "id": "bibo-qwen3.6-dense",
+            "name": "Bibo Qwen3.6-Dense (jackbox)",
+            "reasoning": true,
+            "input": ["text"],
+            "contextWindow": 131072,
+            "maxTokens": 4096
         }
       ]
     }

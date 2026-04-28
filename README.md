@@ -47,6 +47,14 @@ npm install
 
 Set `LLAMACPP_API_KEY` to override the default `noop` value.
 
+> [!NOTE]
+>
+> If you want this to persist as a global call, add this to your environment globals:
+>
+> ```bash
+> alias bibo='node ~/kibi/node_modules/.bin/pi'
+> ```
+
 ## Setup
 
 Edit `models.json` to point at your model endpoints. The `llama-cpp-provider` extension reads this file at startup.

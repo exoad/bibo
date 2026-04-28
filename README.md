@@ -6,10 +6,8 @@ Fortified with industry grade system prompts from Claude & OpenCode :)
 
 ## My Server
 
-Very frankenstein
-
-- **GPU 1:** NVIDIA V100 SXM2 (w/ PCIe Adaptor) 32GB for attention layers (bought off eBay)
-- **GPU 2:** NVIDIA RTX 3080 (20GB MOD) for MoE expert layers (bought off eBay)
+- **GPU 1:** NVIDIA V100 SXM2 (w/ PCIe Adaptor) 32GB for attention layers 
+- **GPU 2:** NVIDIA RTX 3080 (20GB MOD) for MoE expert layers 
 - **CPU:** AMD Ryzen 5 7500X3D 
 - **RAM:** 16GB DDR5 (The X3D suffices for RAM shortage and single channel implications D:)
 
@@ -18,6 +16,10 @@ Currently running Qwen-3.6-35B-A3B Q5 with llama.cpp.
 > Also compile llama.cpp yourself for better custom tailoring!
 
 ## Quick Start
+
+> [!WARNING]
+>
+> You will need to do some extra configs in `models.json` to hook it up to your services and machines as this models.json only shows the information for my server.
 
 ```bash
 git clone https://github.com/exoad/bibo.git

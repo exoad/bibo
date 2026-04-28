@@ -17,9 +17,9 @@ Currently running Qwen-3.6-35B-A3B Q5 with llama.cpp.
 
 ## Quick Start
 
-> [!WARNING]
+> [!NOTE]
 >
-> You will need to do some extra configs in `models.json` to hook it up to your services and machines as this models.json only shows the information for my server.
+> `models.json` is preconfigured for my server. Update it for your setup — see below.
 
 ```bash
 git clone https://github.com/exoad/bibo.git
@@ -30,10 +30,20 @@ npm install
 ### Run
 
 ```bash
-export LLAMACPP_API_KEY=noop # does not matter if you are running locally
-
-./node_modules/.bin/pi
+./kibi.sh
 ```
+
+Set `LLAMACPP_API_KEY` to override the default `noop` value.
+
+## Setup
+
+Edit `models.json` to point at your model endpoints. The `llama-cpp-provider` extension reads this file at startup.
+
+- **Local llama.cpp** — set `type: "local"`, provide `host`, `port`, and `model` path
+- **Remote API** — set `type: "remote"`, provide `url` and `apiKey`
+- **Multiple models** — add entries to the `models` array; pick one via `LITTLE_CODER_BENCHMARK`
+
+See `.pi/settings.json` for model profiles and compaction settings.
 
 ## Structure
 

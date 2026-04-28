@@ -1,28 +1,20 @@
 <div align="center">
 
-![bibo](./icon.png)
+<img src="./icon.png" width=82/>
 
 # bibo
 
----
-
 *A coding agent for local models on consumer hardware*
-
----
 
 Fortified with industry-grade system prompts from Claude & OpenCode
 
 </div>
 
----
-
 <div align="center">
 
-![sc](./sc.png)
+<img src="./sc.png" height=300/>
 
 </div>
-
----
 
 ## My Server
 

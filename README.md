@@ -28,13 +28,9 @@ npm install
 ### Run
 
 ```bash
-export LLAMACPP_API_KEY=noop   # or OLLAMA_API_KEY=noop
+export LLAMACPP_API_KEY=noop # does not matter if you are running locally
 
-# Interactive TUI
-./node_modules/.bin/pi --model llamacpp/qwen3.5
-
-# Single prompt
-./node_modules/.bin/pi -p "read README.md and summarize" --model llamacpp/qwen3.5
+./node_modules/.bin/pi
 ```
 
 ## Structure

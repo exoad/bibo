@@ -1,7 +1,20 @@
 {
   "compaction": { "enabled": true },
   "retry": { "enabled": true, "maxRetries": 2 },
-  "packages": [],
+  "packages": [
+    "npm:@feniix/pi-code-reasoning",
+    "npm:pi-gsd",
+    "npm:pi-web-access",
+    "npm:pi-markdown-preview",
+    "npm:@rhobot-dev/rho",
+    "npm:pi-token-burden",
+    "npm:@feniix/pi-statusline",
+    "npm:pi-review-loop",
+    "npm:pi-quests",
+    "npm:pi-tool-display",
+    "npm:pi-mermaid",
+    "npm:pi-rtk-optimizer"
+  ],
   "bibo": {
     "default_model_profile": {
       "context_limit": 131072,

@@ -29,3 +29,4 @@ brainstorm_outputs/
 # Project memory (keep FORMAT.md, ignore others)
 Memory/
 !Memory/FORMAT.md
+sessions/

@@ -1,9 +1,7 @@
 {
   "compaction": { "enabled": true },
   "retry": { "enabled": true, "maxRetries": 2 },
-  "packages": [
-    "npm:context-mode"
-  ],
+  "packages": [],
   "bibo": {
     "default_model_profile": {
       "context_limit": 131072,

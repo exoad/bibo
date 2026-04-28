@@ -18,12 +18,6 @@ RULES:
 - Returns sorted list of matching file paths
 - Good for finding files by extension or name pattern
 
-## Claude Code Inspired Guidelines
-
-### Prefer Glob Over Bash
-- Use **Glob** for file search instead of `find`/`ls` in bash
-- Glob is faster, more precise, and doesn't pollute context with shell output
-
 EXAMPLE:
 ```tool
 {"name": "Glob", "input": {"pattern": "**/*.py"}}

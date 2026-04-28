@@ -20,25 +20,6 @@ RULES:
 - To delete text: set new_string to ""
 - Read the file first if you do not already have its current content
 
-## Claude Code Inspired Guidelines
-
-### Must Read First
-- ALWAYS read the file before editing — never guess at content
-- When editing text from Read tool output, ensure you preserve the exact indentation (tabs/spaces) as it appears AFTER the line number prefix
-- The line number prefix format varies — everything after that is the actual file content to match
-- Never include any part of the line number prefix in the old_string or new_string
-
-### Prefer Editing Existing Files
-- ALWAYS prefer editing existing files in the codebase
-- NEVER write new files unless explicitly required
-- Use `replace_all` for replacing and renaming strings across the file (e.g., renaming a variable)
-
-### Code Style
-- Only use emojis if the user explicitly requests it
-- Avoid adding emojis to files unless asked
-- Default to writing no comments in code — one short line max
-- Don't create planning, decision, or analysis documents unless the user asks for them
-
 EXAMPLE:
 ```tool
 {"name": "Edit", "input": {"file_path": "/absolute/path/file.py", "old_string": "def hello():\n    return 1", "new_string": "def hello():\n    return 2"}}

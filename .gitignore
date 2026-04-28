@@ -11,8 +11,7 @@ node_modules/
 __pycache__/
 *.pyc
 
-# Claude Code local state
-.claude/
+
 
 # Visual-asset generation workspace
 .vhs-work/

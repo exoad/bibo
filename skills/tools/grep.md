@@ -19,12 +19,6 @@ RULES:
 - Returns matching lines with file path and line number
 - Good for finding function definitions, imports, references
 
-## Claude Code Inspired Guidelines
-
-### Prefer Grep Over Bash
-- Use **Grep** for content search instead of `grep`/`rg` in bash
-- Grep is faster, more precise, and doesn't pollute context with shell output
-
 EXAMPLE:
 ```tool
 {"name": "Grep", "input": {"pattern": "def main", "include": "*.py"}}

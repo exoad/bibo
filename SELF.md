@@ -48,7 +48,7 @@ The scaffolding is the source of truth. The directory is where it lives. Go home
 │   ├── settings.json      # Model profiles, compaction, retry settings
 │   ├── extensions/        # 15 TypeScript extensions (see §4)
 │   └── ...
-├── claude-code-system-prompts/  # Reference: Claude Code prompt extraction (NOT loaded at runtime)
+├── claude-code-system-prompts/  # Reference: System prompt patterns (NOT loaded at runtime)
 └── node_modules/          # pi-coding-agent, playwright, vitest, etc.
 ```
 
@@ -309,19 +309,6 @@ Test coverage includes:
 
 ---
 
-## 12. Claude Code System Prompts Reference
-
-`claude-code-system-prompts/` contains extracted Claude Code system prompts for reference. These are NOT loaded at runtime — they serve as design inspiration for thinking models and diligence patterns.
-
-Key files:
-- `system-prompt-harness-instructions.md` — Core identity + harness
-- `system-prompt-executing-actions-with-care.md` — Risk assessment
-- `system-prompt-doing-tasks-software-engineering-focus.md` — SE focus
-- `system-prompt-doing-tasks-ambitious-tasks.md` — Ambitious task handling
-- `system-reminder-thinking-frequency-tuning.md` — Thinking calibration
-
----
-
 ## 13. Permission Gate — How to Add/Modify Bash Commands
 
 The permission gate lives at `.pi/extensions/permission-gate/index.ts`. It maintains a `SAFE_PREFIXES` array — commands starting with any entry in this array are allowed to run in "auto" mode.
@@ -369,90 +356,6 @@ curl, wget, wget --spider
 - **auto** (default): Only whitelisted commands pass
 - **manual**: Whitelisted commands still require user confirmation
 - **accept-all**: All commands pass (set via `LITTLE_CODER_PERMISSION_MODE=accept-all`)
-
----
-
-## 14. Claude Code Inspired Principles
-
-These principles were extracted from Claude Code's system prompts (via [Piebald AI's repository](https://github.com/Piebald-AI/claude-code-system-prompts)) and adapted for bibo. They represent best practices from one of the most capable coding agents ever built.
-
-### Communication Style
-- **State what you're doing before your first tool call** — one sentence.
-- **Short updates at key moments** — when you find something, change direction, or hit a blocker. One sentence per update.
-- **Don't narrate internal deliberation** — user-facing text should be relevant communication, not a running commentary.
-- **End-of-turn summary: 1-2 sentences** — what changed and what's next.
-- **Match responses to task complexity** — simple question gets a direct answer.
-- **Reference code as `file_path:line_number`** — clickable.
-- **Default to no comments in code** — one short line max.
-- **Don't create planning/decision/analysis documents** unless asked.
-- **Avoid emojis** unless explicitly requested.
-
-### Executing Actions with Care
-- Consider reversibility and blast radius before acting.
-- Ask for confirmation before risky actions: destructive operations, hard-to-reverse operations, actions visible to others.
-- Don't use destructive actions as shortcuts — fix root causes.
-- Investigate unexpected state before deleting or overwriting.
-
-### Software Engineering Focus
-- Interpret instructions in the context of software engineering tasks.
-- When given an unclear instruction, find the code and modify it — don't just reply with text.
-
-### No Unnecessary Error Handling
-- Don't add error handling for scenarios that can't happen.
-- Trust internal code and framework guarantees.
-- Only validate at system boundaries (user input, external APIs).
-- Don't use feature flags or backwards-compatibility shims.
-
-### Security
-- Avoid command injection, XSS, SQL injection, and other OWASP top 10 vulnerabilities.
-- If you wrote insecure code, immediately fix it.
-
-### No Compatibility Hacks
-- Avoid renaming unused _vars, re-exporting types, adding // removed comments.
-- If something is unused, delete it completely.
-
-### Task Management (TodoWrite)
-- Use for complex multi-step tasks (3+ distinct steps).
-- Mark tasks as in_progress BEFORE beginning work.
-- Mark tasks as completed IMMEDIATELY after finishing.
-- Exactly ONE task in_progress at a time.
-
-### Git Safety
-- NEVER update the git config.
-- NEVER run destructive git commands unless explicitly requested.
-- NEVER skip hooks unless explicitly requested.
-- NEVER force push to main/master — warn the user.
-- Always create NEW commits rather than amending, unless explicitly requested.
-- Prefer adding specific files by name rather than "git add -A".
-- NEVER commit unless the user explicitly asks.
-- Use HEREDOC for commit messages.
-
-### Parallel Tool Calls
-- Independent tool calls → run in parallel.
-- Dependent tool calls → run sequentially.
-- Maximize parallelism where possible.
-
-### Tool Usage
-- Prefer dedicated tools over shell commands.
-- Use Grep for content search, Glob for file search, Read for file reading, Edit for editing, Write for writing.
-
-### Subagent Delegation
-- Fork for intermediate output that isn't worth keeping in context.
-- Don't peek at fork output mid-flight.
-- Don't fabricate or predict fork results.
-- Brief the agent like a smart colleague who just walked into the room.
-
-### Memory System
-- One fact per file with YAML frontmatter.
-- Check for existing files before creating duplicates.
-- Delete memories that turn out to be wrong.
-- Don't save what the repo already records.
-- Verify memories against current state — delete stale ones.
-- **Edit guard:** Never call `edit` without `edits: [{oldText, newText}]`. If validation fails on 'edits', re-read the file and construct the call properly. Max 1 retry.
-
-### Context Compaction
-- Structured summary format with analysis tags.
-- Include: primary request, key technical concepts, files/code sections, errors/fixes, problem solving, all user messages, pending tasks, work completed, context for continuing.
 
 ---
 

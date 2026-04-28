@@ -18,16 +18,6 @@ RULES:
 - Use limit+offset for large files (read in chunks of 100-200 lines)
 - Returns format: "N\tline_content" (tab-separated line number + content)
 
-## Claude Code Inspired Guidelines
-
-### Prefer Read Over Bash
-- Use **Read** for file reading instead of `cat`/`head`/`tail` in bash
-- Read returns structured output with line numbers, making it easier to reference specific lines
-
-### Code References
-- Reference code as `file_path:line_number` — it's clickable
-- This helps the user navigate to the source code location easily
-
 EXAMPLE:
 ```tool
 {"name": "Read", "input": {"file_path": "/absolute/path/to/file.py"}}

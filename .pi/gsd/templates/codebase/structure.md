@@ -146,7 +146,7 @@ get-shit-done/
 - Subdirectories: None
 
 **commands/gsd/**
-- Purpose: Slash command definitions for Claude Code
+- Purpose: Slash command definitions
 - Contains: *.md files (one per command)
 - Key files: new-project.md, plan-phase.md, execute-plan.md
 - Subdirectories: None (flat structure)
@@ -186,7 +186,7 @@ get-shit-done/
 
 **Documentation:**
 - `README.md` - User-facing installation and usage guide
-- `GEMINI.md` - Instructions for Claude Code when working in this repo
+- `GEMINI.md` - Instructions for coding agents when working in this repo
 
 ## Naming Conventions
 

@@ -50,7 +50,7 @@ export function assessResponse(
   return { ok: true };
 }
 
-export function buildCorrectionMessage(reason: string): string {
+export function buildCorrectionMessage(reason: string, lastTool?: string): string {
   const corrections: Record<string, string> = {
     empty_response:
       "Your previous response was empty. Please respond with either " +
@@ -61,7 +61,12 @@ export function buildCorrectionMessage(reason: string): string {
     repeated_tool_call:
       "You just made the exact same tool call as your previous turn. " +
       "This suggests you may be stuck in a loop. Please try a different " +
-      "approach or explain what you're trying to accomplish.",
+      "approach or explain what you're trying to accomplish. " +
+      (lastTool
+        ? `You used ${lastTool} last turn. Do NOT use ${lastTool} again. ` +
+          `Instead, try: Bash (to run a command), Glob (to find files), ` +
+          `Grep (to search content), or just answer with text.`
+        : "Instead, try a different tool or answer with text."),
   };
 
   if (reason.startsWith("unknown_tool:")) {

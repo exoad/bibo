@@ -1,5 +1,6 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { assessResponse, buildCorrectionMessage, type ToolCall } from "./quality.ts";
+import { state as sharedState } from "../shared-state";
 
 // Port of local/quality.py. Hooks turn_end, inspects the assistant message
 // + previous turn's tool calls, and — if we detect a failure mode — queues
@@ -60,11 +61,16 @@ export default function (pi: ExtensionAPI) {
       return;
     }
 
-    const correction = buildCorrectionMessage(verdict.reason);
+    // Track the last tool call name for better correction messages
+    const lastToolName = currentCalls.length > 0 ? currentCalls[0].name : undefined;
+    const correction = buildCorrectionMessage(verdict.reason, lastToolName);
     ctx.ui.notify(
       `quality-monitor: ${verdict.reason} → queued correction`,
       "warning",
     );
+    // Signal skill-inject that a correction was sent, so it can inject
+    // anti-loop guidance on the next turn.
+    sharedState.correctionSent = true;
     pi.sendUserMessage(correction, { deliverAs: "followUp" });
   });
 }

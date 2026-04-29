@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseSkillFile } from "./frontmatter.ts";
+import { state as sharedState } from "../shared-state";
 
 // ── Tool-skill registry ─────────────────────────────────────────────────
 // Port of local/skill_augment.py. Loads skills/tools/*.md once, hooks
@@ -19,11 +20,20 @@ interface ToolSkill {
 const skills = new Map<string, ToolSkill>();
 const selectionCache = new Map<string, string>();
 let loaded = false;
+let antiLoopSkill: ToolSkill | null = null; // loaded separately, injected on corrections
 
 // State tracked across the session so we have error-recovery + recency
 // signals by the time the next `before_agent_start` fires.
 const recentToolCalls: string[] = []; // most-recent-first, capped at 8
 let lastFailedTool: string | null = null;
+// Anti-loop: track which tool's guidance was just injected. Skip it on the
+// very next turn so the model isn't pushed back into the same tool.
+let lastInjectedTool: string | null = null;
+// Anti-loop: after a repeated_tool_call correction, skip the most recent
+// tool's guidance for one turn.
+let skipMostRecent: boolean = false;
+// Anti-loop: inject anti-loop guidance on the next turn after a correction.
+let injectAntiLoop: boolean = false;
 
 // ── Intent keywords → likely tools (exact port of _INTENT_MAP) ──────────
 const INTENT_MAP: Record<string, string[]> = {
@@ -63,7 +73,12 @@ function loadSkills(): void {
     const cost = typeof parsed.frontmatter.token_cost === "number"
       ? parsed.frontmatter.token_cost
       : 150;
-    skills.set(target, { targetTool: target, body: parsed.body, tokenCost: cost });
+    // Load anti_loop separately (it uses target_tool: META)
+    if (target === "META") {
+      antiLoopSkill = { targetTool: "META", body: parsed.body, tokenCost: cost };
+    } else {
+      skills.set(target, { targetTool: target, body: parsed.body, tokenCost: cost });
+    }
   }
 }
 
@@ -85,6 +100,10 @@ function selectSkills(prompt: string, budget: number, allowed?: Set<string>): To
     if (!sk || selected.includes(sk)) return;
     if (allowed && !allowed.has(name)) return;
     if (used + sk.tokenCost > budget) return;
+    // Anti-loop: skip the tool whose guidance was just injected last turn.
+    // Small models get stuck re-reading the same guidance and making the
+    // same tool call again.
+    if (name === lastInjectedTool) return;
     selected.push(sk);
     used += sk.tokenCost;
   };
@@ -92,10 +111,18 @@ function selectSkills(prompt: string, budget: number, allowed?: Set<string>): To
   // 1. Error recovery — last failed tool
   if (lastFailedTool) tryAdd(lastFailedTool);
 
-  // 2. Recency — last 2 tool calls
-  for (const name of recentToolCalls.slice(0, 4)) {
+  // 2. Recency — last 2 tool calls, but skip the most recent after a
+  //    repeated_tool_call correction. Also limit to at most 1 recency pick
+  //    to avoid pushing the same tool repeatedly.
+  const recencyCandidates = skipMostRecent
+    ? recentToolCalls.slice(1) // skip the very most recent
+    : recentToolCalls.slice(0, 4);
+  let recencyUsed = false;
+  for (const name of recencyCandidates) {
     if (used >= budget) break;
+    if (recencyUsed) break; // only pick ONE recency tool, not all of them
     tryAdd(name);
+    recencyUsed = true;
   }
 
   // 3. Intent prediction on the user's current prompt
@@ -151,6 +178,30 @@ export default function (pi: ExtensionAPI) {
     }
 
     const selected = selectSkills(event.prompt ?? "", budget, allowed);
+
+    // Anti-loop: inject anti-loop guidance after a correction, regardless of
+    // skill selection. This gives the model explicit instructions on what to do.
+    if (sharedState.correctionSent && antiLoopSkill) {
+      sharedState.correctionSent = false; // consume the flag
+      const antiBlock = `\n\n## Anti-Loop Guidance\n${antiLoopSkill.body}\n`;
+      // Also inject normal tool guidance if budget allows
+      if (selected.length > 0) {
+        const key = selected.map((s) => s.targetTool).sort().join("|");
+        let block = selectionCache.get(key);
+        if (block === undefined) {
+          block = buildBlock(selected);
+          selectionCache.set(key, block);
+        }
+        lastInjectedTool = selected[0]?.targetTool ?? null;
+        skipMostRecent = false;
+        return { systemPrompt: (event.systemPrompt ?? "") + antiBlock + block };
+      } else {
+        lastInjectedTool = "META";
+        skipMostRecent = false;
+        return { systemPrompt: (event.systemPrompt ?? "") + antiBlock };
+      }
+    }
+
     if (selected.length === 0) return;
 
     const key = selected.map((s) => s.targetTool).sort().join("|");
@@ -159,6 +210,11 @@ export default function (pi: ExtensionAPI) {
       block = buildBlock(selected);
       selectionCache.set(key, block);
     }
+
+    // Track what we injected so the next turn skips it (anti-loop).
+    // Reset skipMostRecent since we've consumed it.
+    lastInjectedTool = selected[0]?.targetTool ?? null;
+    skipMostRecent = false;
 
     // Fire-and-forget notify so the benchmark harness can count per-turn
     // skill injections without having to reconstruct the system prompt.

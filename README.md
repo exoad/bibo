@@ -41,9 +41,7 @@ npm install
 
 ### Run
 
-```bash
-./kibi.sh
-```
+Go to `bin/` and run the appropriate script for your platform.
 
 Set `LLAMACPP_API_KEY` to override the default `noop` value.
 
@@ -63,13 +61,13 @@ The dashboard runs on `http://127.0.0.1:3000` and auto-starts when you run `bibo
 To use `bibo` from anywhere, add this to your `~/.zshrc` (or equivalent shell config):
 
 ```bash
-alias bibo='~/kibi/bin/bibo.sh'
+alias bibo='~/bibo/bin/bibo.sh'
 ```
 
 On Windows, use:
 
 ```cmd
-doskey bibo=C:\kibi\bin\bibo.cmd $*
+doskey bibo=C:\bibo\bin\bibo.cmd $*
 ```
 
 ## Setup
@@ -85,7 +83,7 @@ See `.pi/settings.json` for model profiles and compaction settings.
 ## Structure
 
 | Path | Purpose |
-|------|---------| 
+|------|---------|
 | `bin/` | Cross-platform bibo launcher (macOS/Linux/Windows) |
 | `dashboard/` | Web dashboard for sessions, brain, vault, and quests |
 | `.pi/extensions/` | 20 TypeScript extensions (auto-discovered) |

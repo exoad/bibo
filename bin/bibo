@@ -2,7 +2,7 @@
 /**
  * Bibo - Launch pi-coding-agent with web dashboard
  * Usage: bibo [prompt]
- * 
+ *
  * Cross-platform launcher that:
  * 1. Starts the dashboard server (if not already running)
  * 2. Launches pi-coding-agent
@@ -53,7 +53,7 @@ function startDashboard() {
     stdio: 'ignore',
     env: { ...process.env, PORT: String(PORT), HOST }
   });
-  
+
   child.unref();
   writeFileSync(PID_FILE, String(child.pid));
   console.log(`Dashboard started (PID ${child.pid})`);
@@ -63,7 +63,7 @@ function startDashboard() {
 function stopDashboard() {
   const pid = getDashboardPid();
   if (!pid) return;
-  
+
   if (isProcessRunning(pid)) {
     console.log('Stopping dashboard...');
     try {
@@ -108,7 +108,7 @@ const PI_BIN = join(__dirname, '..', 'node_modules', '.bin', 'pi');
 
 // Check if pi exists
 if (!existsSync(PI_BIN)) {
-  console.error('Error: pi-coding-agent not found. Run `npm install` in ~/kibi first.');
+  console.error('Error: pi-coding-agent not found. Run `npm install` in ~/bibo first.');
   process.exit(1);
 }
 

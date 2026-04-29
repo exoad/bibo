@@ -19,7 +19,7 @@ bibo is a **pi-based coding agent** optimized for small local language models (e
 
 ## 2. Home Directory Principle
 
-**~/kibi is home.** If you are ever operating outside this directory and need to reference, read, or modify your own scaffolding (extensions, skills, settings, SYSTEM.md, SELF.md, AGENTS.md, or any internal config), **cd back to ~/kibi first.** All your instructions, extensions, skills, and self-knowledge live here — don't try to reason about them from memory or from a different working directory.
+**~/bibo is home.** If you are ever operating outside this directory and need to reference, read, or modify your own scaffolding (extensions, skills, settings, SYSTEM.md, SELF.md, AGENTS.md, or any internal config), **cd back to ~/bibo first.** All your instructions, extensions, skills, and self-knowledge live here — don't try to reason about them from memory or from a different working directory.
 
 This applies to:
 - Editing SELF.md, SYSTEM.md, AGENTS.md, or any .pi/ files
@@ -34,7 +34,7 @@ The scaffolding is the source of truth. The directory is where it lives. Go home
 ## 3. Directory Structure
 
 ```
-/Users/jmeng/kibi/
+/Users/jmeng/bibo/
 ├── AGENTS.md              # Project instructions (loaded as context file)
 ├── SYSTEM.md              # System prompt override (replaces default)
 ├── models.json            # Provider/model definitions (jackbox, ollama)
@@ -65,7 +65,7 @@ Extensions live in `.pi/extensions/` and are auto-discovered. Each is a TypeScri
 | **benchmark-profiles** | Resolves model profiles from `.pi/settings.json`, sets temperature=0.3 | `before_agent_start`, `before_provider_request` |
 | **tool-gating** | Blocks tools not in `LITTLE_CODER_ALLOWED_TOOLS` | `before_agent_start`, `tool_call` |
 | **permission-gate** | Whitelists safe bash commands; blocks others in "auto" mode | `tool_call` |
-| **checkpoint** | Backs up files before Write/Edit (saves to `~/.kibi/checkpoints/<session>`) | `session_start`, `tool_call` |
+| **checkpoint** | Backs up files before Write/Edit (saves to `~/.bibo/checkpoints/<session>`) | `session_start`, `tool_call` |
 | **skill-inject** | Selects tool skill cards from `skills/tools/*.md` based on intent/error/recency (300-token budget) | `tool_result`, `before_agent_start` |
 | **knowledge-inject** | Scores knowledge entries from `skills/knowledge/*.md` + `skills/protocols/*.md` against user prompt (200-token budget, threshold=2.0) | `before_agent_start` |
 | **thinking-budget** | Caps thinking tokens; aborts + retries with thinking=off when exceeded | `before_agent_start`, `turn_start`, `message_update`, `turn_end` |
@@ -279,7 +279,7 @@ Per-session in-memory store (`stores` Map). Survives compaction via `evidence-co
 
 ### Checkpoint Store
 
-Files backed up before Write/Edit to `~/.kibi/checkpoints/<session>`. First-write-wins per session.
+Files backed up before Write/Edit to `~/.bibo/checkpoints/<session>`. First-write-wins per session.
 
 ### Browser Session
 

@@ -43,9 +43,9 @@ When requirements or approach are ambiguous, resolve them against what you can r
 
 Before editing unfamiliar code, surface local documentation — `.docs/instructions.md`, `AGENTS.md`, `CLAUDE.md`, `README.md`, `SPEC.md` — and the file you intend to change. Do this ONCE at the start of a task, not every turn. The spec file often contains the exact format rules, edge cases, or constraints the tests assert, which you'd otherwise have to reverse-engineer.
 
-## Project memory (~/kibi/Memory)
+## Project memory (~/bibo/Memory)
 
-Before working on any project, check for a memory file at `~/kibi/Memory/<project-name>.md`. If it exists, read it first — it contains a pre-built technical summary (architecture, key files, protocols, design principles) so you don't have to re-index the project from scratch. If no memory file exists, create one after your initial exploration. The project name is typically the directory name of the repo root (e.g., `app-src` → `drosk.md`).
+Before working on any project, check for a memory file at `~/bibo/Memory/<project-name>.md`. If it exists, read it first — it contains a pre-built technical summary (architecture, key files, protocols, design principles) so you don't have to re-index the project from scratch. If no memory file exists, create one after your initial exploration. The project name is typically the directory name of the repo root (e.g., `app-src` → `drosk.md`).
 
 # Self-modification & reflection
 

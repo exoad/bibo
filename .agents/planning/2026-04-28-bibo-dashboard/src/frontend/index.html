@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bibo Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <span class="logo">Bibo Dashboard</span>
+                <span class="version">v1.0</span>
+            </div>
+            <div class="header-center">
+                <input type="text" id="search-input" class="search-input" placeholder="Search sessions, brain..." />
+            </div>
+            <div class="header-right">
+                <span id="model-badge" class="badge">Model: -</span>
+                <span id="status-indicator" class="status-dot"></span>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <div class="layout">
+            <!-- Sidebar -->
+            <nav class="sidebar">
+                <a href="#" class="nav-item active" data-view="sessions">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">Sessions</span>
+                </a>
+                <a href="#" class="nav-item" data-view="brain">
+                    <span class="nav-icon">🧠</span>
+                    <span class="nav-text">Brain</span>
+                </a>
+                <a href="#" class="nav-item" data-view="vault">
+                    <span class="nav-icon">📚</span>
+                    <span class="nav-text">Vault</span>
+                </a>
+                <a href="#" class="nav-item" data-view="quests">
+                    <span class="nav-icon">🎯</span>
+                    <span class="nav-text">Quests</span>
+                </a>
+                <a href="#" class="nav-item" data-view="skills">
+                    <span class="nav-icon">⚡</span>
+                    <span class="nav-text">Skills</span>
+                </a>
+                <a href="#" class="nav-item" data-view="config">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Config</span>
+                </a>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="content" id="content">
+                <!-- Dynamic content loaded here -->
+                <div class="loading">Loading...</div>
+            </main>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <span id="last-updated">Last updated: -</span>
+            <span id="polling-info">Polling: 5s</span>
+            <span id="elapsed-time">⏱️ 0s</span>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

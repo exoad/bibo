@@ -115,10 +115,18 @@ Extensions are loaded in filesystem order (alphabetical by directory name). The 
       "jackbox/bibo-qwen3.6": {
         "context_limit": 131072,
         "max_tokens": 4096,
-        "thinking_budget": 2048,
+        "thinking_budget": 8192,
         "skill_token_budget": 300,
         "knowledge_token_budget": 200,
-        "temperature": 0.3
+        "temperature": 0.6
+      },
+      "jackbox/bibo-qwen3.6-flash": {
+        "context_limit": 65536,
+        "max_tokens": 4096,
+        "thinking_budget": 8192,
+        "skill_token_budget": 300,
+        "knowledge_token_budget": 200,
+        "temperature": 0.6
       }
     }
   }

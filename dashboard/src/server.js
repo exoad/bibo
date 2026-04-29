@@ -63,10 +63,13 @@ async function handleRequest(req, res) {
     return serveFile(res, join(FRONTEND_DIR, 'index.html'), '.html');
   }
 
-  if (pathname.startsWith('/static/')) {
-    const filePath = join(FRONTEND_DIR, pathname.replace('/static/', ''));
-    const ext = '.' + filePath.split('.').pop();
-    return serveFile(res, filePath, ext);
+  // SPA fallback: serve index.html for any non-API, non-asset route
+  // so React Router can handle client-side routing
+  if (!pathname.startsWith('/api/') && !pathname.startsWith('/assets/')) {
+    if (USE_VITE_BUILD) {
+      return serveFile(res, join(DIST_DIR, 'index.html'), '.html');
+    }
+    return serveFile(res, join(FRONTEND_DIR, 'index.html'), '.html');
   }
 
   // Vite build: serve asset files

@@ -64,6 +64,14 @@ function loadProviders(): ProviderConfig[] {
           contextWindow: 131072,
           maxTokens: 4096,
         },
+	{
+          id: "bibo-qwen3.6-flash",
+          name: "Bibo Qwen3.6-Flash (jackbox)",
+          reasoning: true,
+          input: ["text"],
+          contextWindow: 65536,
+          maxTokens: 4096,
+	},
       ],
     },
     {

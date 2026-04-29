@@ -29,21 +29,48 @@ Currently running Qwen-3.6-35B-A3B Q5 with llama.cpp.
 
 ## Quick Start
 
-> [!NOTE]
->
-> `models.json` is preconfigured for my server. Update it for your setup - see below.
-
 ```bash
 git clone https://github.com/exoad/bibo.git
 cd bibo
 npm install
 ```
 
+### Configure the Model
+
+Bibo connects to a model via environment variables — **not** via `models.json`. The `llama-cpp-provider` extension reads these at startup:
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `LLAMACPP_BASE_URL` | Model server endpoint | `http://127.0.0.1:6969/v1` |
+| `LLAMACPP_API_KEY` | API key (if required) | `noop` |
+
+**Local llama.cpp** (running on this machine):
+```bash
+export LLAMACPP_BASE_URL="http://127.0.0.1:6969/v1"
+export LLAMACPP_API_KEY="noop"
+```
+
+**Remote server** (your own model host):
+```bash
+export LLAMACPP_BASE_URL="http://<your-server-ip>:6969/v1"
+export LLAMACPP_API_KEY="noop"   # or your actual API key
+```
+
+> [!TIP]
+> Add the exports to your `~/.zshrc` (or `~/.bashrc`) to persist across sessions.
+> Alternatively, put them in `~/bibo/.env` and source it:
+> ```bash
+> if [ -f ~/bibo/.env ]; then set -a; source ~/bibo/.env; set +a; fi
+> ```
+
 ### Run
 
-Go to `bin/` and run the appropriate script for your platform.
+```bash
+./bin/bibo.sh
+```
 
-Set `LLAMACPP_API_KEY` to override the default `noop` value.
+> [!NOTE]
+> Environment variables must be set **before** launching. The launcher passes `process.env` directly to pi.
 
 #### Dashboard
 
@@ -72,13 +99,33 @@ doskey bibo=C:\bibo\bin\bibo.cmd $*
 
 ## Setup
 
-Edit `models.json` to point at your model endpoints. The `llama-cpp-provider` extension reads this file at startup.
+### Model Provider Configuration
 
-- **Local llama.cpp** - set `type: "local"`, provide `host`, `port`, and `model` path
-- **Remote API** - set `type: "remote"`, provide `url` and `apiKey`
-- **Multiple models** - add entries to the `models` array; pick one via `LITTLE_CODER_BENCHMARK`
+The `llama-cpp-provider` extension (`.pi/extensions/llama-cpp-provider/index.ts`) registers the `jackbox` provider at startup using environment variables:
 
-See `.pi/settings.json` for model profiles and compaction settings.
+```typescript
+const LLAMACPP_BASE_URL = process.env.LLAMACPP_BASE_URL || "http://127.0.0.1:6969/v1";
+const LLAMACPP_API_KEY = process.env.LLAMACPP_API_KEY || "noop";
+```
+
+It also registers an `ollama` provider with the same pattern (`OLLAMA_BASE_URL`, `OLLAMA_API_KEY`).
+
+### Environment Variables
+
+Set these before running bibo:
+
+- **`LLAMACPP_BASE_URL`** — llama.cpp OpenAI-compatible endpoint
+- **`LLAMACPP_API_KEY`** — API key (leave as `noop` if no auth)
+- **`OLLAMA_BASE_URL`** — Ollama endpoint (default: `http://127.0.0.1:11434/v1`)
+- **`OLLAMA_API_KEY`** — Ollama API key (default: `noop`)
+
+### Per-Project Config
+
+You can keep env vars in `~/bibo/.env` and auto-source them. The launcher inherits all environment variables, so no extra config is needed.
+
+### pi Settings
+
+See `.pi/settings.json` for model profiles, compaction, and retry settings.
 
 ## Structure
 

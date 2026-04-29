@@ -1,0 +1,125 @@
+#!/usr/bin/env node
+/**
+ * Bibo - Launch pi-coding-agent with web dashboard
+ * Usage: bibo [prompt]
+ * 
+ * Cross-platform launcher that:
+ * 1. Starts the dashboard server (if not already running)
+ * 2. Launches pi-coding-agent
+ * 3. Cleans up the dashboard when pi exits
+ */
+
+import { spawn, spawnSync } from 'child_process';
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { networkInterfaces } from 'os';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const DASHBOARD_DIR = join(__dirname, '..', 'dashboard');
+const SERVER_JS = join(DASHBOARD_DIR, 'src', 'server.js');
+const PID_FILE = join(process.env.HOME || process.env.USERPROFILE || '.', '.pi', 'dashboard.pid');
+const PORT = 3000;
+const HOST = '127.0.0.1';
+
+// Ensure .pi directory exists
+const piDir = join(process.env.HOME || process.env.USERPROFILE || '.', '.pi');
+if (!existsSync(piDir)) {
+  require('fs').mkdirSync(piDir, { recursive: true });
+}
+
+function getDashboardPid() {
+  if (!existsSync(PID_FILE)) return null;
+  try {
+    return parseInt(readFileSync(PID_FILE, 'utf8').trim(), 10);
+  } catch {
+    return null;
+  }
+}
+
+function isProcessRunning(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function startDashboard() {
+  console.log('Starting dashboard...');
+  const child = spawn('node', [SERVER_JS], {
+    detached: true,
+    stdio: 'ignore',
+    env: { ...process.env, PORT: String(PORT), HOST }
+  });
+  
+  child.unref();
+  writeFileSync(PID_FILE, String(child.pid));
+  console.log(`Dashboard started (PID ${child.pid})`);
+  return child;
+}
+
+function stopDashboard() {
+  const pid = getDashboardPid();
+  if (!pid) return;
+  
+  if (isProcessRunning(pid)) {
+    console.log('Stopping dashboard...');
+    try {
+      process.kill(pid, 'SIGTERM');
+    } catch {
+      // Process already died
+    }
+  }
+  try {
+    unlinkSync(PID_FILE);
+    console.log('Dashboard stopped.');
+  } catch {
+    // PID file already removed
+  }
+}
+
+function cleanup() {
+  stopDashboard();
+  process.exit(0);
+}
+
+// Register cleanup handlers
+process.on('exit', cleanup);
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
+
+// Start dashboard if not already running
+let dashboardPid = getDashboardPid();
+if (dashboardPid && isProcessRunning(dashboardPid)) {
+  console.log(`Dashboard already running (PID ${dashboardPid})`);
+} else {
+  if (dashboardPid) {
+    // Stale PID file
+    try { unlinkSync(PID_FILE); } catch {}
+    dashboardPid = null;
+  }
+  startDashboard();
+}
+
+// Resolve pi binary path
+const PI_BIN = join(__dirname, '..', 'node_modules', '.bin', 'pi');
+
+// Check if pi exists
+if (!existsSync(PI_BIN)) {
+  console.error('Error: pi-coding-agent not found. Run `npm install` in ~/kibi first.');
+  process.exit(1);
+}
+
+// Launch pi-coding-agent with remaining arguments
+console.log('Launching pi...');
+const piProcess = spawn(PI_BIN, process.argv.slice(2), {
+  stdio: 'inherit',
+  env: { ...process.env }
+});
+
+piProcess.on('close', (code) => {
+  cleanup();
+  process.exit(code || 0);
+});

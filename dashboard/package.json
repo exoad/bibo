@@ -9,6 +9,9 @@
   "type": "module",
   "scripts": {
     "start": "node bin/cli.js launch",
+    "start:react": "USE_VITE_BUILD=1 node src/server.js",
+    "build": "cd src-frontend && npm run build",
+    "dev:react": "cd src-frontend && npm run dev",
     "test": "node --test src/**/*.test.js"
   },
   "keywords": ["bibo", "dashboard", "pi-coding-agent"],

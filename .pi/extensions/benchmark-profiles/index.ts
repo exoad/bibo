@@ -2,6 +2,7 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { homedir } from "node:os";
 
 // Port of local/config.py::MODEL_PROFILES + get_model_profile with
 // benchmark_overrides. Reads .pi/settings.json's bibo.model_profiles
@@ -41,10 +42,13 @@ function repoRoot(): string {
 function loadSettings(): void {
   if (loaded) return;
   loaded = true;
-  // Try project .pi/settings.json first, then ~/.pi/agent/settings.json
+  // Try project .pi/settings.json first, then user's home directory .pi/agent/settings.json
+  // Use homedir() instead of process.env.HOME for cross-platform compatibility
+  // (process.env.HOME is unset on Windows; homedir() handles USERPROFILE)
+  const home = homedir();
   const candidates = [
     join(repoRoot(), ".pi", "settings.json"),
-    join(process.env.HOME ?? "", ".pi", "agent", "settings.json"),
+    join(home, ".pi", "agent", "settings.json"),
   ];
   for (const p of candidates) {
     if (!existsSync(p)) continue;

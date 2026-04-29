@@ -6,7 +6,7 @@ import { homedir } from "node:os";
 // Port of checkpoint/hooks.py. Snapshots a file's contents before a Write
 // or Edit tool modifies it. First-write-wins per session (don't re-backup
 // a file already tracked this session). Backups land in
-// ~/.bibo/checkpoints/<session>.
+// <home>/.bibo/checkpoints/<session>, where <home> is resolved via os.homedir().
 
 const tracked = new Map<string, Set<string>>(); // sessionId -> absolute paths
 

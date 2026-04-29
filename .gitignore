@@ -32,3 +32,6 @@ brainstorm_outputs/
 Memory/
 !Memory/FORMAT.md
 sessions/
+
+# Local planning/development artifacts (never committed)
+.agents/

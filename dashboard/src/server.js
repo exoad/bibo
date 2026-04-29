@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createServer } from 'node:http';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -19,8 +19,11 @@ import {
 
 const __dirname = import.meta.dirname;
 const FRONTEND_DIR = join(__dirname, 'frontend');
+const DIST_DIR = join(__dirname, '..', 'src-frontend', 'dist');
 const PORT = 3000;
 const HOST = '127.0.0.1';
+const USE_VITE_BUILD = process.env.USE_VITE_BUILD === '1' || (existsSync(DIST_DIR) && existsSync(join(DIST_DIR, 'index.html')));
+console.log('USE_VITE_BUILD:', USE_VITE_BUILD, 'DIST_DIR:', DIST_DIR, 'DIST_EXISTS:', existsSync(DIST_DIR));
 
 // MIME types
 const MIME_TYPES = {
@@ -54,6 +57,9 @@ async function handleRequest(req, res) {
   }
 
   if (pathname === '/' || pathname === '/index.html') {
+    if (USE_VITE_BUILD) {
+      return serveFile(res, join(DIST_DIR, 'index.html'), '.html');
+    }
     return serveFile(res, join(FRONTEND_DIR, 'index.html'), '.html');
   }
 
@@ -61,6 +67,15 @@ async function handleRequest(req, res) {
     const filePath = join(FRONTEND_DIR, pathname.replace('/static/', ''));
     const ext = '.' + filePath.split('.').pop();
     return serveFile(res, filePath, ext);
+  }
+
+  // Vite build: serve asset files
+  if (USE_VITE_BUILD) {
+    const filePath = join(DIST_DIR, pathname);
+    const ext = '.' + filePath.split('.').pop();
+    if (MIME_TYPES[ext]) {
+      return serveFile(res, filePath, ext);
+    }
   }
 
   res.writeHead(404, { 'Content-Type': 'text/plain' });

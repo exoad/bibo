@@ -1,7 +1,7 @@
-# SELF.md — bibo Internal Architecture Reference
+# SELF.md - bibo Internal Architecture Reference
 
 **This file is the living document of how bibo works internally.**
-It is NOT included in the system prompt by default — I must read it when asked to modify or understand my own scaffolding.
+It is NOT included in the system prompt by default - I must read it when asked to modify or understand my own scaffolding.
 
 ---
 
@@ -19,7 +19,7 @@ bibo is a **pi-based coding agent** optimized for small local language models (e
 
 ## 2. Home Directory Principle
 
-**~/bibo is home.** If you are ever operating outside this directory and need to reference, read, or modify your own scaffolding (extensions, skills, settings, SYSTEM.md, SELF.md, AGENTS.md, or any internal config), **cd back to ~/bibo first.** All your instructions, extensions, skills, and self-knowledge live here — don't try to reason about them from memory or from a different working directory.
+**The project directory is home.** If you are ever operating outside this directory and need to reference, read, or modify your own scaffolding (extensions, skills, settings, SYSTEM.md, SELF.md, AGENTS.md, or any internal config), **cd back to the project root first.** All your instructions, extensions, skills, and self-knowledge live here — don't try to reason about them from memory or from a different working directory.
 
 This applies to:
 - Editing SELF.md, SYSTEM.md, AGENTS.md, or any .pi/ files
@@ -34,7 +34,7 @@ The scaffolding is the source of truth. The directory is where it lives. Go home
 ## 3. Directory Structure
 
 ```
-/Users/jmeng/bibo/
+<project-root>/
 ├── AGENTS.md              # Project instructions (loaded as context file)
 ├── SYSTEM.md              # System prompt override (replaces default)
 ├── provider.json            # Provider config (local, not tracked by VCS)
@@ -52,7 +52,6 @@ The scaffolding is the source of truth. The directory is where it lives. Go home
 ├── claude-code-system-prompts/  # Reference: System prompt patterns (NOT loaded at runtime)
 └── node_modules/          # pi-coding-agent, playwright, vitest, etc.
 ```
-
 ---
 
 ## 4. Extension Stack (in load order)
@@ -66,7 +65,7 @@ Extensions live in `.pi/extensions/` and are auto-discovered. Each is a TypeScri
 | **benchmark-profiles** | Resolves model profiles from `.pi/settings.json`, sets temperature=0.3 | `before_agent_start`, `before_provider_request` |
 | **tool-gating** | Blocks tools not in `LITTLE_CODER_ALLOWED_TOOLS` | `before_agent_start`, `tool_call` |
 | **permission-gate** | Whitelists safe bash commands; blocks others in "auto" mode | `tool_call` |
-| **checkpoint** | Backs up files before Write/Edit (saves to `~/.bibo/checkpoints/<session>`) | `session_start`, `tool_call` |
+| **checkpoint** | Backs up files before Write/Edit (saves to user's home directory under `.bibo/checkpoints/<session>`) | `session_start`, `tool_call` |
 | **skill-inject** | Selects tool skill cards from `skills/tools/*.md` based on intent/error/recency (300-token budget) | `tool_result`, `before_agent_start` |
 | **knowledge-inject** | Scores knowledge entries from `skills/knowledge/*.md` + `skills/protocols/*.md` against user prompt (200-token budget, threshold=2.0) | `before_agent_start` |
 | **thinking-budget** | Caps thinking tokens; aborts + retries with thinking=off when exceeded | `before_agent_start`, `turn_start`, `message_update`, `turn_end` |
@@ -79,7 +78,7 @@ Extensions live in `.pi/extensions/` and are auto-discovered. Each is a TypeScri
 | **shell-session** | Registers ShellSession/ShellSessionCwd/ShellSessionReset tools (subprocess or tmux-proxy) | (tool registration only) |
 | **extra-tools** | Registers glob, webfetch, websearch tools | (tool registration only) |
 | **llama-cpp-provider** | Registers `jackbox` and `ollama` providers dynamically | (provider registration only) |
-| **benchmark-profiles** | (also listed above — resolves model profiles) | |
+| **benchmark-profiles** | (also listed above - resolves model profiles) | |
 
 ### Extension Load Order
 
@@ -139,7 +138,7 @@ Extensions are loaded in filesystem order (alphabetical by directory name). The 
 | `LITTLE_CODER_PERMISSION_MODE` | "auto" | "accept-all" | "manual" for bash gating |
 | `LITTLE_CODER_MAX_TURNS` | Hard turn limit per agent run |
 | `LITTLE_CODER_THINKING_BUDGET` | Thinking token budget override |
-| `LITTLE_CODER_BENCHMARK` | "terminal_bench" or "gaia" — triggers profile overrides |
+| `LITTLE_CODER_BENCHMARK` | "terminal_bench" or "gaia" - triggers profile overrides |
 | `LITTLE_CODER_SESSION_ID` | Session identifier for multi-session isolation |
 | `LITTLE_CODER_TB_MODE` | "1" = Terminal-Bench tmux-proxy mode |
 | `LLAMACPP_BASE_URL` | llama.cpp endpoint (default: `http://127.0.0.1:6969/v1`) |
@@ -280,7 +279,7 @@ Per-session in-memory store (`stores` Map). Survives compaction via `evidence-co
 
 ### Checkpoint Store
 
-Files backed up before Write/Edit to `~/.bibo/checkpoints/<session>`. First-write-wins per session.
+Files backed up before Write/Edit to user's home directory under `.bibo/checkpoints/<session>`. First-write-wins per session.
 
 ### Browser Session
 
@@ -310,9 +309,9 @@ Test coverage includes:
 
 ---
 
-## 13. Permission Gate — How to Add/Modify Bash Commands
+## 13. Permission Gate - How to Add/Modify Bash Commands
 
-The permission gate lives at `.pi/extensions/permission-gate/index.ts`. It maintains a `SAFE_PREFIXES` array — commands starting with any entry in this array are allowed to run in "auto" mode.
+The permission gate lives at `.pi/extensions/permission-gate/index.ts`. It maintains a `SAFE_PREFIXES` array - commands starting with any entry in this array are allowed to run in "auto" mode.
 
 ### How to add a new tool
 
@@ -324,9 +323,9 @@ The permission gate lives at `.pi/extensions/permission-gate/index.ts`. It maint
 ### Timer Extension (`.pi/extensions/timer/`)
 
 Provides three tools for temporal tracking:
-- **TimeElapsed** — Report session uptime and task durations. Optional label to check time since a specific mark.
-- **MarkStart** — Begin tracking a new task/phase with a label.
-- **MarkEnd** — Stop tracking the current task and report its duration.
+- **TimeElapsed** - Report session uptime and task durations. Optional label to check time since a specific mark.
+- **MarkStart** - Begin tracking a new task/phase with a label.
+- **MarkEnd** - Stop tracking the current task and report its duration.
 
 State is per-session (in-memory). Resets on `session_shutdown`.
 
@@ -383,11 +382,94 @@ curl, wget, wget --spider
 2. Or set `LITTLE_CODER_BENCHMARK` for benchmark-specific overrides
 
 ### Changing System Prompt
-1. Edit `SYSTEM.md` (project-level) or `~/.pi/agent/SYSTEM.md` (global)
+1. Edit `SYSTEM.md` (project-level) or `<home>/.pi/agent/SYSTEM.md` (global), where `<home>` is the user's home directory
 
 ---
 
-## 16. Common Pitfalls
+## 16. Dashboard (`dashboard/`)
+
+A local web UI dashboard for the bibo coding agent. It provides a visual interface to explore sessions, brain memories, vault notes, quests, and skills.
+
+### Architecture
+
+- **Backend**: Node.js HTTP server (`dashboard/src/server.js`) — serves static files + REST API
+- **Data layer**: `dashboard/src/data.js` — reads from `~/.pi/agent/sessions/`, `~/.rho/brain/brain.jsonl`, `~/.rho/vault/`
+- **Frontend**: Vanilla HTML/CSS/JS (`dashboard/src/frontend/`) — single-page app with client-side routing
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/sessions` | GET | List all sessions |
+| `/api/sessions/:id` | GET | Get session detail |
+| `/api/sessions/:id/export` | GET | Export session as JSON |
+| `/api/brain` | GET | Load brain memories |
+| `/api/vault` | GET | List vault notes |
+| `/api/vault/:slug` | GET | Get vault note content |
+| `/api/quests` | GET | List quests |
+| `/api/quests/:id/complete` | POST | Mark quest as complete |
+| `/api/status` | GET | Agent status (uptime, model, etc.) |
+| `/api/skills` | GET | List skills |
+| `/api/skills/:name/trigger` | POST | Trigger a skill |
+| `/api/search` | GET | Search across sessions, brain, vault |
+| `/api/config` | GET | Dashboard configuration |
+| `/api/health` | GET | Health check |
+| `/api/version` | GET | Dashboard version |
+
+### Views
+
+- **Sessions**: List of all agent sessions with search/filter, detail view with messages/tool calls
+- **Brain**: Display of brain memory entries (learning, behavior, preference, etc.)
+- **Vault**: List and read vault notes with markdown rendering
+- **Quests**: List of quests with completion status
+- **Skills**: List of available skills with trigger buttons
+- **Config**: Dashboard settings (poll interval, theme, etc.)
+
+### Running
+
+```bash
+cd dashboard
+node src/server.js
+# Opens at http://127.0.0.1:3000
+```
+
+### Frontend Migration
+
+The frontend has been migrated to React + Vite + TypeScript. The new frontend lives in `dashboard/src-frontend/` and is automatically served when the `dist/` directory exists.
+
+#### Migration Details
+
+- **Stack**: React 18, Vite, Tailwind CSS, React Router, TanStack Query
+- **Location**: `dashboard/src-frontend/`
+- **Build**: `cd dashboard/src-frontend && npm run build`
+- **Development**: `cd dashboard/src-frontend && npm run dev`
+- **Serving**: The server automatically detects and serves the Vite build when `dist/` exists
+- **Legacy**: The old vanilla frontend (`dashboard/src/frontend/`) has been removed
+
+#### Known Issues
+
+- **Server crashes when dist/ doesn't exist**: The server will fail to start if the Vite build is not present. Always build the frontend before starting the server.
+- **Port conflicts**: If the server is already running on port 3000, new instances will fail with EADDRINUSE. Use a different port or kill the existing process.
+- **Shell session crashes**: Running `node src/server.js &` in the shell session can crash the session. Use the `ShellSession` tool instead for long-running processes.
+
+---
+
+## 17. Shell Session Safety
+
+**CRITICAL: Never run commands that spawn long-running processes in the background** without explicit user confirmation. The following commands are known to crash the shell session and brick the Pi editor:
+
+- `node src/server.js &` — Spawns a Node.js server in the background, which can hang the shell
+- `npm run build` — Can timeout and crash the shell session if it takes too long
+- `node -e "..."` — Complex inline Node.js scripts can fail silently and leave the shell in a broken state
+- Any command that binds to a port (HTTP servers, databases, etc.)
+
+**Safe alternatives:**
+- Use `timeout` command to limit execution time
+- Always ask user before running potentially dangerous commands
+- Use `ShellSession` tool for long-running processes instead of inline bash
+- If the shell crashes, use `ShellSessionReset` to recover
+
+## 18. Common Pitfalls
 
 - **Write refuses on existing files**: Use Edit with exact old_string/new_string
 - **Bash timeout**: Default 30s; set to 120-300 for slow commands
@@ -396,3 +478,4 @@ curl, wget, wget --spider
 - **BrowserExtract results are pruned**: Only 2 newest kept raw
 - **Thinking budget aborts mid-stream**: Model gets a correction follow-up
 - **Extensions are stateful**: In-memory state persists across turns within a session, but is reset on session switch
+- **Shell session crashes**: Never spawn background processes without user confirmation (see §17)

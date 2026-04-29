@@ -37,7 +37,8 @@ The scaffolding is the source of truth. The directory is where it lives. Go home
 /Users/jmeng/bibo/
 ├── AGENTS.md              # Project instructions (loaded as context file)
 ├── SYSTEM.md              # System prompt override (replaces default)
-├── models.json            # Provider/model definitions (jackbox, ollama)
+├── provider.json            # Provider config (local, not tracked by VCS)
+├── provider.json.example  # Provider config template (copy to provider.json to activate)
 ├── package.json           # Dependencies: pi-coding-agent, playwright, vitest
 ├── SELF.md                # ← You are reading this file
 ├── skills/

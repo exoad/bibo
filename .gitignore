@@ -2,6 +2,9 @@
 node_modules/
 .DS_Store
 
+# Provider config (local to each user)
+provider.json
+
 # Pi session + auth state (local to each user)
 .pi/sessions/
 .pi/auth.json

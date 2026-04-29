@@ -1,0 +1,36 @@
+{
+  "providers": [
+    {
+      "name": "jackbox",
+      "api": "openai-completions",
+      "baseUrl": "http://127.0.0.1:6969/v1",
+      "apiKey": "noop",
+      "models": [
+        {
+          "id": "bibo-qwen3.6",
+          "name": "Bibo Qwen3.6 (jackbox)",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 131072,
+          "maxTokens": 4096
+        }
+      ]
+    },
+    {
+      "name": "ollama",
+      "api": "openai-completions",
+      "baseUrl": "http://127.0.0.1:11434/v1",
+      "apiKey": "noop",
+      "models": [
+        {
+          "id": "qwen3.5",
+          "name": "Qwen3.5 (ollama)",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 32768,
+          "maxTokens": 4096
+        }
+      ]
+    }
+  ]
+}

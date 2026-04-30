@@ -7,3 +7,5 @@ export const state = {
   /** Set by quality-monitor when a correction is sent. Read by skill-inject. */
   correctionSent: false,
 };
+
+export default function (pi: ExtensionAPI) { }

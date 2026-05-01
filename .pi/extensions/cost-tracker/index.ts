@@ -1,10 +1,24 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
+import { readFileSync, writeFileSync, existsSync } from "fs";
+import { join } from "path";
+import { execSync } from "child_process";
 
 // Cost-tracker extension — simulates Claude API pricing in real-time.
 // Tracks token usage from message_update events (text_delta, thinking_delta)
 // and tool calls from tool_call events. Displays a running cost widget
 // in the TUI. All costs are fake — you're running locally for free.
+//
+// STATE PERSISTENCE: Cost is saved to disk and accumulates across sessions.
+// It NEVER resets — CostReset is now a no-op (just reports current total).
+
+const STATE_FILE = join(
+  process.env.HOME ?? "/tmp",
+  ".pi",
+  "extensions",
+  "cost-tracker",
+  "state.json",
+);
 
 // ── Claude Sonnet pricing (per 1M tokens) ──────────────────────────────
 const PRICING = {
@@ -12,7 +26,7 @@ const PRICING = {
   output_per_m: 15,     // $15 per 1M output tokens
   thinking_per_m: 3,    // $3 per 1M thinking tokens (same as input)
   cache_read_per_m: 0.3, // $0.30 per 1M cache-read tokens
-  cache_write_per_m: 3,  // $3 per 1M cache-write tokens
+  cache_write_per_m: 3.75, // $3.75 per 1M cache-write tokens (5m TTL)
   tool_call_base: 0.005, // $0.005 per tool call
 } as const;
 
@@ -45,16 +59,45 @@ interface CostState {
   totalCost: number;
 }
 
-const state: CostState = {
-  inputTokens: 0,
-  outputTokens: 0,
-  thinkingTokens: 0,
-  cacheReadTokens: 0,
-  cacheWriteTokens: 0,
-  toolCalls: 0,
-  toolSurchargeTotal: 0,
-  totalCost: 0,
-};
+function loadState(): CostState {
+  try {
+    if (existsSync(STATE_FILE)) {
+      const raw = readFileSync(STATE_FILE, "utf-8");
+      return JSON.parse(raw) as CostState;
+    }
+  } catch {
+    // Corrupt file — start fresh
+  }
+  return {
+    inputTokens: 0,
+    outputTokens: 0,
+    thinkingTokens: 0,
+    cacheReadTokens: 0,
+    cacheWriteTokens: 0,
+    toolCalls: 0,
+    toolSurchargeTotal: 0,
+    totalCost: 0,
+  };
+}
+
+function saveState(): void {
+  try {
+    const dir = STATE_FILE.split("/").slice(0, -1).join("/");
+    if (!existsSync(dir)) {
+      execSync(`mkdir -p "${dir}"`);
+    }
+    writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), "utf-8");
+  } catch {
+    // Silently fail — we don't want disk errors to crash the agent
+  }
+}
+
+// Load persisted state on init (accumulates across sessions)
+const state: CostState = loadState();
+
+function markDirty(): void {
+  saveState();
+}
 
 function formatCost(cents: number): string {
   const dollars = cents / 100;
@@ -72,6 +115,7 @@ function recalcCost(): void {
     (state.cacheWriteTokens / 1_000_000) * PRICING.cache_write_per_m +
     state.toolCalls * PRICING.tool_call_base +
     state.toolSurchargeTotal;
+  markDirty();
 }
 
 function costLine(): string {
@@ -91,7 +135,6 @@ function uptimeLine(): string {
 }
 
 function costWidgetCompact(): string {
-  // Single minimal line: $0.15 in:10K out:5K 0h 5m
   const parts: string[] = [costLine()];
   if (state.inputTokens > 0) parts.push(`in:${(state.inputTokens / 1000).toFixed(0)}K`);
   if (state.outputTokens > 0) parts.push(`out:${(state.outputTokens / 1000).toFixed(0)}K`);
@@ -103,15 +146,8 @@ function costWidgetCompact(): string {
 
 export default function (pi: ExtensionAPI) {
   pi.on("session_start", async (_event, ctx) => {
-    // Reset state per session
-    state.inputTokens = 0;
-    state.outputTokens = 0;
-    state.thinkingTokens = 0;
-    state.cacheReadTokens = 0;
-    state.cacheWriteTokens = 0;
-    state.toolCalls = 0;
-    state.toolSurchargeTotal = 0;
-    state.totalCost = 0;
+    // NOTE: Cost state is NEVER reset — it accumulates across all sessions.
+    // sessionStart tracks per-session uptime for the widget.
     sessionStart = Date.now();
 
     if (!ctx.hasUI) return;
@@ -183,41 +219,38 @@ export default function (pi: ExtensionAPI) {
     recalcCost();
   });
 
-  // Register a CostReset tool
+  // Register a CostReset tool — now a no-op since cost never resets.
+  // It reports the current accumulated total instead.
   pi.registerTool({
     name: "CostReset",
     label: "CostReset",
     description:
-      "Reset the fake cost counter to zero. Useful for starting a fresh billing session.",
+      "Cost is now global and never resets. This tool reports the current accumulated total.",
     parameters: Type.Object({}),
     async execute() {
-      state.inputTokens = 0;
-      state.outputTokens = 0;
-      state.thinkingTokens = 0;
-      state.cacheReadTokens = 0;
-      state.cacheWriteTokens = 0;
-      state.toolCalls = 0;
-      state.toolSurchargeTotal = 0;
-      state.totalCost = 0;
-      sessionStart = Date.now();
       return {
-        content: [{ type: "text", text: "💸 Cost counter reset to $0.00. Fresh start!" }],
+        content: [
+          {
+            type: "text",
+            text: `💸 Cost is global and never resets. Current accumulated total: ${formatCost(state.totalCost * 100)}`,
+          },
+        ],
         details: {},
       };
     },
   });
 
-  // Register a CostReport tool
+  // Register a CostReport tool — shows full breakdown
   pi.registerTool({
     name: "CostReport",
     label: "CostReport",
     description:
-      "Print a detailed breakdown of the current fake billing session.",
+      "Print a detailed breakdown of the accumulated fake billing.",
     parameters: Type.Object({}),
     async execute() {
       const c = formatCost(state.totalCost * 100);
       const lines = [
-        `=== Fake Billing Report ===`,
+        `=== Fake Billing Report (Accumulated) ===`,
         `Total cost: ${c}`,
         ``,
         `Token breakdown:`,
@@ -231,6 +264,7 @@ export default function (pi: ExtensionAPI) {
         `Tool surcharges: $${state.toolSurchargeTotal.toFixed(4)}`,
         ``,
         `⚠️  All costs are fake. You're running locally for free.`,
+        `💾 State persisted to: ${STATE_FILE}`,
       ];
       return {
         content: [{ type: "text", text: lines.join("\n") }],

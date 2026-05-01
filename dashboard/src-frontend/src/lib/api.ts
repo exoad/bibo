@@ -35,19 +35,34 @@ async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   // Sessions
-  getSessions: () => fetchJson<Session[]>('/api/sessions'),
+  getSessions: async () => {
+    const res = await fetchJson<{ sessions: Session[]; count: number }>('/api/sessions');
+    return res.sessions;
+  },
   getSession: (id: string) => fetchJson<SessionDetail>(`/api/sessions/${id}`),
   exportSession: (id: string) => fetchJson<ExportData>(`/api/sessions/${id}/export`),
 
   // Brain
-  getBrain: () => fetchJson<Memory[]>('/api/brain'),
+  getBrain: async () => {
+    const res = await fetchJson<Record<string, Memory[]>>('/api/brain');
+    return Object.values(res).flat();
+  },
 
   // Vault
-  getVault: () => fetchJson<VaultNote[]>('/api/vault'),
-  getVaultNote: (slug: string) => fetchJson<VaultNote>(`/api/vault/${slug}`),
+  getVault: async () => {
+    const res = await fetchJson<{ notes: VaultNote[]; count: number }>('/api/vault');
+    return res.notes;
+  },
+  getVaultNote: async (slug: string) => {
+    const res = await fetchJson<{ note: VaultNote }>(`/api/vault/${slug}`);
+    return res.note;
+  },
 
   // Quests
-  getQuests: () => fetchJson<Quest[]>('/api/quests'),
+  getQuests: async () => {
+    const res = await fetchJson<{ quests: Quest[] }>('/api/quests');
+    return res.quests;
+  },
   completeQuest: (id: string) =>
     fetchJson<{ success: boolean; quest: Quest }>(`/api/quests/${id}/complete`, {
       method: 'POST',
@@ -57,7 +72,10 @@ export const api = {
   getStatus: () => fetchJson<Status>('/api/status'),
 
   // Skills
-  getSkills: () => fetchJson<Skill[]>('/api/skills'),
+  getSkills: async () => {
+    const res = await fetchJson<{ skills: Skill[] }>('/api/skills');
+    return res.skills;
+  },
   triggerSkill: (name: string) =>
     fetchJson<{ success: boolean; skill: Skill }>(`/api/skills/${name}/trigger`, {
       method: 'POST',
@@ -67,7 +85,10 @@ export const api = {
   search: (query: string) => fetchJson<SearchResults>(`/api/search?q=${encodeURIComponent(query)}`),
 
   // Config
-  getConfig: () => fetchJson<Config>('/api/config'),
+  getConfig: async () => {
+    const res = await fetchJson<{ config: Status }>('/api/config');
+    return res.config as unknown as Config;
+  },
   updateConfig: (config: Partial<Config>) =>
     fetchJson<Config>('/api/config', {
       method: 'POST',

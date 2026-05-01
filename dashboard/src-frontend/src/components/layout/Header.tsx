@@ -1,9 +1,14 @@
 // === Header Component ===
-// Logo, search bar, and status indicator
+// Top bar with search, branding, and status indicator
 
 import { useState } from 'react';
 import { useStatus } from '../../hooks/useData';
 import { useConfigStore } from '../../stores/configStore';
+import {
+  CheckCircle,
+  MagnifyingGlass,
+  Spinner,
+} from '@phosphor-icons/react';
 
 export function Header() {
   const { data: status } = useStatus({ enabled: true });
@@ -19,36 +24,42 @@ export function Header() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Navigate to search results (to be implemented)
       console.log('Search:', searchQuery);
     }
   };
 
+  const isOnline = status?.status === 'online' || status?.status === 'ok';
+
   return (
-    <header className="flex items-center justify-between px-4 py-3 bg-bg-secondary border-b border-border-color h-[52px] flex-shrink-0">
-      <div className="flex items-center gap-2.5">
-        <span className="font-bold text-sm tracking-tight flex items-center gap-2">
-          <span className="text-accent">◆</span>
-          <span>Bibo Dashboard</span>
-        </span>
-        <span className="text-xs text-text-muted">v1.0</span>
+    <header className="h-[56px] flex items-center justify-between px-4 bg-white border-b border-border-light flex-shrink-0">
+      <div className="flex items-center gap-3 flex-1">
+        {/* Search bar */}
+        <form onSubmit={handleSearchSubmit} className="flex-1 max-w-lg">
+          <div className="relative">
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearch}
+              placeholder="Search sessions, brain, vault... (⌘K)"
+              className="w-full pl-10 pr-4 py-2 text-sm bg-bg-tertiary border border-border-color rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
+            />
+          </div>
+        </form>
       </div>
 
-      <form onSubmit={handleSearchSubmit} className="flex-1 max-w-md mx-4">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={handleSearch}
-          placeholder="Search sessions, brain, vault... (Ctrl+K)"
-          className="w-full px-3 py-1.5 text-sm bg-bg-tertiary border border-border-color rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-        />
-      </form>
-
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-text-secondary">
-          {status?.model || 'Model: -'}
-        </span>
-        <span className={`w-2 h-2 rounded-full ${status?.status === 'online' || status?.status === 'ok' ? 'bg-success' : 'bg-text-muted'}`} />
+      <div className="flex items-center gap-4">
+        {/* Status indicator */}
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-tertiary rounded-lg">
+          {isOnline ? (
+            <CheckCircle className="w-4 h-4 text-success" weight="fill" />
+          ) : (
+            <Spinner className="w-4 h-4 text-text-muted" weight="regular" />
+          )}
+          <span className="text-xs text-text-secondary">
+            {status?.model || 'Model: -'}
+          </span>
+        </div>
       </div>
     </header>
   );

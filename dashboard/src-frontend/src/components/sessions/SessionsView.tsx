@@ -6,6 +6,7 @@ import { useSessions } from '../../hooks/useData';
 import { Loading } from '../shared/Loading';
 import { EmptyState } from '../shared/EmptyState';
 import { ErrorState } from '../shared/ErrorState';
+import { ChatCircleText, Clock, List } from '@phosphor-icons/react';
 
 export function SessionsView() {
   const { data: sessions, isLoading, error } = useSessions({ enabled: true });
@@ -17,38 +18,49 @@ export function SessionsView() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg font-semibold">Sessions</h1>
-        <span className="text-sm text-text-secondary">{sessions.length} sessions</span>
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <ChatCircleText className="w-5 h-5 text-accent" weight="fill" />
+          <h1 className="text-lg font-semibold">Sessions</h1>
+        </div>
+        <span className="text-sm text-text-muted bg-bg-tertiary px-2.5 py-1 rounded-md">
+          {sessions.length} total
+        </span>
       </div>
 
+      {/* Session list */}
       <div className="space-y-2">
         {sessions.map((session) => (
           <Link
             key={session.id}
             to={`/sessions/${session.id}`}
-            className="block p-4 bg-bg-secondary border border-border-color rounded-lg hover:border-border-hover transition-colors"
+            className="block p-4 bg-white border border-border-light rounded-lg hover:border-accent/30 hover:shadow-sm transition-all group"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium text-text-primary truncate">
+                <h3 className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors truncate">
                   {session.title || 'Untitled Session'}
                 </h3>
                 <p className="text-xs text-text-muted mt-1 truncate">
                   {session.preview || 'No messages yet'}
                 </p>
               </div>
-              <div className="text-right shrink-0">
+              <div className="text-right shrink-0 space-y-1">
                 {session.modelId && (
-                  <span className="text-xs text-text-muted">{session.modelId}</span>
+                  <span className="text-xs text-text-muted bg-bg-tertiary px-2 py-0.5 rounded-md">
+                    {session.modelId}
+                  </span>
                 )}
-                <p className="text-xs text-text-muted mt-1">
-                  {new Date(session.timestamp).toLocaleString()}
-                </p>
-                <span className="text-xs text-text-muted">
-                  {session.messageCount} messages
-                </span>
+                <div className="flex items-center justify-end gap-1.5 text-xs text-text-muted">
+                  <Clock className="w-3 h-3" weight="regular" />
+                  <span>{new Date(session.timestamp).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center justify-end gap-1.5 text-xs text-text-muted">
+                  <List className="w-3 h-3" weight="regular" />
+                  <span>{session.messageCount} messages</span>
+                </div>
               </div>
             </div>
           </Link>

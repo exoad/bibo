@@ -10,7 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
     "@tanstack/react-query": "^5.100.6",
+    "antd": "^6.3.7",
     "clsx": "^2.1.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",

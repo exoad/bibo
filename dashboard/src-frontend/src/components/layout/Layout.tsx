@@ -12,7 +12,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   return (
-    <div className="flex flex-col h-screen bg-bg-primary text-text-primary">
+    <div className="flex flex-col h-screen bg-bg0 text-fg1">
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />

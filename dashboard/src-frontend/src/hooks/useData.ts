@@ -3,7 +3,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import type { Config } from '../types';
+import type { Config, Status } from '../types';
 
 const QUERY_KEYS = {
   sessions: ['sessions'] as const,
@@ -96,7 +96,7 @@ export function useCompleteQuest() {
 
 // Status
 export function useStatus(options?: { enabled?: boolean }) {
-  return useQuery({
+  return useQuery<Status | undefined, Error, Status | undefined>({
     queryKey: QUERY_KEYS.status,
     queryFn: api.getStatus,
     refetchInterval: 5000,

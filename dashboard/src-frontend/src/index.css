@@ -1,34 +1,62 @@
 @import "tailwindcss";
 
 @theme {
-  /* Light theme (antd-inspired) */
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #fafafa;
-  --color-bg-tertiary: #f5f5f5;
-  --color-bg-hover: #e8e8e8;
-  --color-bg-active: #f0f7ff;
-  --color-border-color: #d9d9d9;
-  --color-border-light: #f0f0f0;
-  --color-text-primary: #000000;
-  --color-text-secondary: #595959;
-  --color-text-muted: #8c8c8c;
-  --color-accent: #1677ff;
-  --color-accent-hover: #4096ff;
-  --color-success: #52c41a;
-  --color-warning: #faad14;
-  --color-error: #ff4d4f;
-  --color-purple: #722ed1;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Noto Sans', 'Inter', sans-serif;
+  /* Gruvbox Dark — utilitarian, no decoration */
+  --color-bg0: #282828;
+  --color-bg0-hard: #1d2021;
+  --color-bg1: #3c3836;
+  --color-bg2: #504945;
+  --color-bg3: #665c54;
+  --color-bg4: #7c6f64;
+  --color-fg0: #fbf1c7;
+  --color-fg1: #ebdbb2;
+  --color-fg2: #d5c4a1;
+  --color-fg3: #bdae93;
+  --color-fg4: #a89984;
+  --color-gray: #928374;
+  --color-red: #cc241d;
+  --color-red-bright: #fb4934;
+  --color-green: #98971a;
+  --color-green-bright: #b8bb26;
+  --color-yellow: #d79921;
+  --color-yellow-bright: #fabd2f;
+  --color-blue: #458588;
+  --color-blue-bright: #83a598;
+  --color-purple: #b16286;
+  --color-purple-bright: #d3869b;
+  --color-aqua: #689d6a;
+  --color-aqua-bright: #8ec07c;
+  --color-orange: #d65d0e;
+  --color-orange-bright: #fe8019;
+
+  /* Legacy aliases for compatibility */
+  --color-bg-primary: #282828;
+  --color-bg-secondary: #1d2021;
+  --color-bg-tertiary: #3c3836;
+  --color-bg-hover: #504945;
+  --color-border-color: #504945;
+  --color-border-light: #3c3836;
+  --color-text-primary: #ebdbb2;
+  --color-text-secondary: #bdae93;
+  --color-text-muted: #928374;
+  --color-accent: #b8bb26;
+  --color-accent-hover: #d3869b;
+  --color-success: #b8bb26;
+  --color-warning: #fabd2f;
+  --color-error: #fb4934;
+  --color-purple: #d3869b;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
 }
 
 body {
   margin: 0;
-  font-family: var(--font-sans);
-  background: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  font-size: 14px;
-  line-height: 1.6;
+  font-family: var(--font-mono);
+  background: var(--color-bg0);
+  color: var(--color-fg1);
+  font-size: 13px;
+  line-height: 1.5;
   overflow: hidden;
   height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -39,93 +67,4 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-border-color);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
-}
-
-::selection {
-  background: rgba(22, 119, 255, 0.12);
-  color: var(--color-accent);
-}
-
-/* Markdown content styling */
-.markdown-content {
-  @apply text-text-primary;
-}
-
-.markdown-content h1 {
-  @apply text-xl font-bold mb-3 mt-4 pb-2 border-b border-border-color;
-}
-
-.markdown-content h2 {
-  @apply text-lg font-semibold mb-2 mt-3;
-}
-
-.markdown-content h3 {
-  @apply text-base font-semibold mb-2 mt-3;
-}
-
-.markdown-content p {
-  @apply mb-3;
-}
-
-.markdown-content ul {
-  @apply list-disc pl-6 mb-3;
-}
-
-.markdown-content ol {
-  @apply list-decimal pl-6 mb-3;
-}
-
-.markdown-content li {
-  @apply mb-1;
-}
-
-.markdown-content code {
-  @apply bg-bg-tertiary px-1.5 py-0.5 rounded text-sm font-mono;
-}
-
-.markdown-content pre {
-  @apply bg-bg-tertiary p-3 rounded-lg mb-3 overflow-x-auto;
-}
-
-.markdown-content pre code {
-  @apply bg-transparent p-0;
-}
-
-.markdown-content blockquote {
-  @apply border-l-4 border-accent pl-4 py-2 mb-3 text-text-secondary italic;
-}
-
-.markdown-content a {
-  @apply text-accent underline hover:text-accent-hover;
-}
-
-.markdown-content table {
-  @apply w-full mb-3 border-collapse;
-}
-
-.markdown-content th {
-  @apply bg-bg-tertiary px-3 py-2 text-left font-semibold border border-border-color;
-}
-
-.markdown-content td {
-  @apply px-3 py-2 border border-border-color;
 }

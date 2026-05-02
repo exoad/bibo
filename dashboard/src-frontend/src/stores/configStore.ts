@@ -11,6 +11,10 @@ interface ConfigState {
   selectedSessionId: string | null;
   selectedVaultSlug: string | null;
   activeView: 'sessions' | 'brain' | 'vault' | 'quests' | 'skills' | 'config';
+  // Keyboard navigation
+  selectedSection: number;
+  selectedIndex: number;
+  helpOpen: boolean;
 
   setPollInterval: (interval: number) => void;
   setTheme: (theme: 'dark' | 'light') => void;
@@ -20,6 +24,14 @@ interface ConfigState {
   setSelectedVaultSlug: (slug: string | null) => void;
   setActiveView: (view: 'sessions' | 'brain' | 'vault' | 'quests' | 'skills' | 'config') => void;
   setSearch: (updates: Partial<Omit<ConfigState, 'activeView'>>) => void;
+  // Keyboard nav actions
+  setSelectedSection: (section: number) => void;
+  setSelectedIndex: (index: number) => void;
+  setHelpOpen: (open: boolean) => void;
+  moveUp: () => void;
+  moveDown: () => void;
+  nextSection: () => void;
+  prevSection: () => void;
 }
 
 export const useConfigStore = create<ConfigState>((set) => ({
@@ -30,6 +42,9 @@ export const useConfigStore = create<ConfigState>((set) => ({
   selectedSessionId: null,
   selectedVaultSlug: null,
   activeView: 'sessions',
+  selectedSection: 0,
+  selectedIndex: 0,
+  helpOpen: false,
 
   setPollInterval: (pollInterval) => set({ pollInterval }),
   setTheme: (theme) => set({ theme }),
@@ -39,4 +54,11 @@ export const useConfigStore = create<ConfigState>((set) => ({
   setSelectedVaultSlug: (selectedVaultSlug) => set({ selectedVaultSlug }),
   setActiveView: (activeView) => set({ activeView }),
   setSearch: (updates) => set(updates),
+  setSelectedSection: (selectedSection) => set({ selectedSection }),
+  setSelectedIndex: (selectedIndex) => set({ selectedIndex }),
+  setHelpOpen: (helpOpen) => set({ helpOpen }),
+  moveUp: () => set((state) => ({ selectedIndex: Math.max(0, state.selectedIndex - 1) })),
+  moveDown: () => set((state) => ({ selectedIndex: state.selectedIndex + 1 })),
+  nextSection: () => set((state) => ({ selectedSection: Math.min(4, state.selectedSection + 1), selectedIndex: 0 })),
+  prevSection: () => set((state) => ({ selectedSection: Math.max(0, state.selectedSection - 1), selectedIndex: 0 })),
 }));

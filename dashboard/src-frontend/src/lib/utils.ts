@@ -45,40 +45,40 @@ export function getStatusColor(status: string): string {
   switch (status) {
     case 'online':
     case 'ok':
-      return 'text-success';
+      return 'text-green-bright';
     case 'warning':
-      return 'text-warning';
+      return 'text-yellow-bright';
     case 'error':
     case 'offline':
-      return 'text-error';
+      return 'text-red-bright';
     default:
-      return 'text-text-muted';
+      return 'text-fg4';
   }
 }
 
 export function getMemoryTypeColor(type: string): string {
   const colors: Record<string, string> = {
-    learning: 'text-accent',
-    behavior: 'text-success',
-    preference: 'text-purple',
-    identity: 'text-warning',
-    user: 'text-accent',
-    context: 'text-text-secondary',
-    task: 'text-warning',
-    reminder: 'text-error',
+    learning: 'text-yellow-bright',
+    behavior: 'text-green-bright',
+    preference: 'text-purple-bright',
+    identity: 'text-orange-bright',
+    user: 'text-yellow-bright',
+    context: 'text-fg3',
+    task: 'text-orange-bright',
+    reminder: 'text-red-bright',
   };
-  return colors[type] || 'text-text-secondary';
+  return colors[type] || 'text-fg3';
 }
 
 export function getQuestStatusColor(status: string): string {
   switch (status) {
     case 'done':
-      return 'text-success';
+      return 'text-green-bright';
     case 'pending':
-      return 'text-accent';
+      return 'text-yellow-bright';
     case 'cancelled':
-      return 'text-error';
+      return 'text-red-bright';
     default:
-      return 'text-text-muted';
+      return 'text-fg4';
   }
 }

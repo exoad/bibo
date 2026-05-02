@@ -122,11 +122,9 @@ async function handleApi(req, res, pathname, url) {
   if (resource === 'skills') {
     return await handleSkills(req, res);
   }
-
   if (resource === 'search') {
     return await handleSearch(req, res, url);
   }
-
   if (resource === 'config') {
     return await handleConfig(req, res);
   }

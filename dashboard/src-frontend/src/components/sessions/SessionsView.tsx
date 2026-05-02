@@ -1,65 +1,97 @@
 // === Sessions List View ===
 // Display all sessions as a list with clickable rows to view details
+// Supports `compact` mode for the utilitarian dashboard
 
 import { Link } from 'react-router-dom';
 import { useSessions } from '../../hooks/useData';
+import { useConfigStore } from '../../stores/configStore';
 import { Loading } from '../shared/Loading';
 import { EmptyState } from '../shared/EmptyState';
 import { ErrorState } from '../shared/ErrorState';
-import { ChatCircleText, Clock, List } from '@phosphor-icons/react';
 
-export function SessionsView() {
+interface Props {
+  compact?: boolean;
+  sectionIndex?: number;
+}
+
+export function SessionsView({ compact = false, sectionIndex }: Props) {
+  const selectedSection = useConfigStore((s) => s.selectedSection);
+  const selectedIndex = useConfigStore((s) => s.selectedIndex);
   const { data: sessions, isLoading, error } = useSessions({ enabled: true });
 
-  if (isLoading) return <Loading />;
-  if (error) return <ErrorState message={error.message} onRetry={() => window.location.reload()} />;
+  if (isLoading && !compact) return <Loading />;
+  if (error && !compact) return <ErrorState message={error.message} onRetry={() => window.location.reload()} />;
   if (!sessions || sessions.length === 0) {
+    if (compact) return <div className="text-[10px] text-gray py-1">(empty)</div>;
     return <EmptyState message="No sessions found." />;
   }
 
+  // Compact mode: flat rows, no decoration
+  if (compact) {
+    return (
+      <div className="font-mono">
+        {sessions.slice(0, 30).map((s, i) => (
+          <Link
+            key={s.id}
+            to={`/sessions/${s.id}`}
+            data-index={i}
+            className={`flex items-center gap-2 px-1 py-0.5 text-[11px] hover:bg-bg1 hover:text-fg0 transition-colors ${
+              sectionIndex !== undefined && selectedSection === sectionIndex && selectedIndex === i
+                ? 'bg-bg2 border-l-2 border-yellow-bright'
+                : ''
+            }`}
+          >
+            <span className="text-gray w-12 shrink-0">{s.id?.slice(0, 8) || '?'}</span>
+            <span className="text-fg1 truncate">{s.title || 'Untitled'}</span>
+            <span className="text-gray ml-auto shrink-0">{s.messageCount}m</span>
+            <span className="text-gray ml-2 shrink-0">{new Date(s.timestamp).toLocaleDateString()}</span>
+          </Link>
+        ))}
+        {sessions.length > 30 && (
+          <div className="text-[10px] text-gray py-1">... {sessions.length - 30} more</div>
+        )}
+      </div>
+    );
+  }
+
+  // Full mode: original decorated layout
   return (
     <div>
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <ChatCircleText className="w-5 h-5 text-accent" weight="fill" />
-          <h1 className="text-lg font-semibold">Sessions</h1>
+          <span className="text-lg font-semibold">Sessions</span>
+          <span className="text-sm text-fg4 bg-bg1 px-2.5 py-1">
+            {sessions.length} total
+          </span>
         </div>
-        <span className="text-sm text-text-muted bg-bg-tertiary px-2.5 py-1 rounded-md">
-          {sessions.length} total
-        </span>
       </div>
-
-      {/* Session list */}
       <div className="space-y-2">
         {sessions.map((session) => (
           <Link
             key={session.id}
             to={`/sessions/${session.id}`}
-            className="block p-4 bg-white border border-border-light rounded-lg hover:border-accent/30 hover:shadow-sm transition-all group"
+            className="block p-4 bg-bg0-hard border border-bg2 hover:border-green/30 transition-all group"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors truncate">
+                <h3 className="text-sm font-medium text-fg1 group-hover:text-green-bright transition-colors truncate">
                   {session.title || 'Untitled Session'}
                 </h3>
-                <p className="text-xs text-text-muted mt-1 truncate">
+                <p className="text-xs text-fg4 mt-1 truncate">
                   {session.preview || 'No messages yet'}
                 </p>
               </div>
               <div className="text-right shrink-0 space-y-1">
                 {session.modelId && (
-                  <span className="text-xs text-text-muted bg-bg-tertiary px-2 py-0.5 rounded-md">
+                  <span className="text-xs text-fg4 bg-bg1 px-2 py-0.5">
                     {session.modelId}
                   </span>
                 )}
-                <div className="flex items-center justify-end gap-1.5 text-xs text-text-muted">
-                  <Clock className="w-3 h-3" weight="regular" />
-                  <span>{new Date(session.timestamp).toLocaleDateString()}</span>
+                <div className="text-xs text-fg4">
+                  {new Date(session.timestamp).toLocaleDateString()}
                 </div>
-                <div className="flex items-center justify-end gap-1.5 text-xs text-text-muted">
-                  <List className="w-3 h-3" weight="regular" />
-                  <span>{session.messageCount} messages</span>
+                <div className="text-xs text-fg4">
+                  {session.messageCount} messages
                 </div>
               </div>
             </div>

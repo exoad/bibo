@@ -24,17 +24,17 @@ export function VaultNoteView() {
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate('/vault')}
-          className="text-text-muted hover:text-accent transition-colors"
+          className="text-fg4 hover:text-green-bright transition-colors"
         >
           <ArrowLeft className="w-5 h-5" weight="regular" />
         </button>
         <div>
           <div className="flex items-center gap-2">
-            <Notebook className="w-5 h-5 text-accent" weight="fill" />
+            <Notebook className="w-5 h-5 text-green-bright" weight="fill" />
             <h1 className="text-lg font-semibold">{note.title || note.slug}</h1>
           </div>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-text-muted bg-bg-tertiary px-2 py-0.5 rounded-md">
+            <span className="text-xs text-fg4 bg-bg1 px-2 py-0.5">
               {note.type}
             </span>
             {note.tags && note.tags.length > 0 && (
@@ -42,7 +42,7 @@ export function VaultNoteView() {
                 {note.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="text-xs bg-bg-tertiary text-text-secondary px-2 py-0.5 rounded-md"
+                    className="text-xs bg-bg1 text-fg3 px-2 py-0.5"
                   >
                     {tag}
                   </span>
@@ -54,7 +54,7 @@ export function VaultNoteView() {
       </div>
 
       {/* Note content */}
-      <div className="p-6 bg-white border border-border-light rounded-lg">
+      <div className="p-6 bg-bg0-hard border border-bg2">
         <div className="markdown-content">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {note.content}

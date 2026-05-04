@@ -29,30 +29,43 @@
   color: inherit;
 }
 
-/* Markdown content styling — minimal */
+/* Markdown content styling — Gruvbox themed */
 .markdown-content {
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.6;
+  color: var(--color-fg1);
 }
 
 .markdown-content h1 {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   margin: 16px 0 8px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid #333;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-bg2);
+  color: var(--color-fg0);
 }
 
 .markdown-content h2 {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  margin: 12px 0 6px;
+  margin: 14px 0 6px;
+  color: var(--color-fg0);
 }
 
 .markdown-content h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 10px 0 4px;
+  color: var(--color-fg1);
+}
+
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
   font-size: 13px;
   font-weight: 600;
   margin: 8px 0 4px;
+  color: var(--color-fg2);
 }
 
 .markdown-content p {
@@ -61,7 +74,7 @@
 
 .markdown-content ul,
 .markdown-content ol {
-  padding-left: 20px;
+  padding-left: 24px;
   margin: 8px 0;
 }
 
@@ -69,57 +82,171 @@
   margin: 4px 0;
 }
 
+.markdown-content li > ul,
+.markdown-content li > ol {
+  margin: 4px 0;
+}
+
 .markdown-content code {
-  background: #222;
-  padding: 2px 4px;
+  background: var(--color-bg1);
+  color: var(--color-orange);
+  padding: 2px 6px;
   font-family: var(--font-mono);
   font-size: 12px;
+  border-radius: 3px;
 }
 
 .markdown-content pre {
-  background: #222;
+  background: var(--color-bg0-hard);
+  border: 1px solid var(--color-bg2);
   padding: 12px;
-  margin: 8px 0;
+  margin: 10px 0;
   overflow-x: auto;
+  border-radius: 4px;
 }
 
 .markdown-content pre code {
   background: none;
+  color: var(--color-fg1);
   padding: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.markdown-content pre code .hljs-keyword {
+  color: var(--color-purple-bright);
+}
+
+.markdown-content pre code .hljs-string {
+  color: var(--color-green-bright);
+}
+
+.markdown-content pre code .hljs-number {
+  color: var(--color-orange-bright);
+}
+
+.markdown-content pre code .hljs-comment {
+  color: var(--color-fg4);
 }
 
 .markdown-content blockquote {
-  border-left: 3px solid #666;
+  border-left: 3px solid var(--color-yellow);
   padding-left: 12px;
-  margin: 8px 0;
-  color: #888;
+  margin: 10px 0;
+  color: var(--color-fg3);
   font-style: italic;
+  background: var(--color-bg1);
+  padding: 8px 12px;
+  border-radius: 0 4px 4px 0;
+}
+
+.markdown-content blockquote p {
+  margin: 4px 0;
 }
 
 .markdown-content a {
-  color: #888;
+  color: var(--color-blue-bright);
   text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s;
 }
 
 .markdown-content a:hover {
-  color: #aaa;
+  color: var(--color-blue);
+  text-decoration-color: var(--color-blue);
 }
 
 .markdown-content table {
   width: 100%;
-  margin: 8px 0;
+  margin: 10px 0;
   border-collapse: collapse;
+  border: 1px solid var(--color-bg2);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .markdown-content th {
-  background: #222;
+  background: var(--color-bg1);
   padding: 8px 12px;
   text-align: left;
   font-weight: 600;
-  border: 1px solid #333;
+  border: 1px solid var(--color-bg2);
+  color: var(--color-fg0);
 }
 
 .markdown-content td {
   padding: 8px 12px;
-  border: 1px solid #333;
+  border: 1px solid var(--color-bg2);
+  color: var(--color-fg1);
+}
+
+.markdown-content tr:nth-child(even) {
+  background: var(--color-bg0-hard);
+}
+
+.markdown-content hr {
+  border: none;
+  border-top: 1px solid var(--color-bg2);
+  margin: 16px 0;
+}
+
+.markdown-content strong {
+  color: var(--color-fg0);
+  font-weight: 600;
+}
+
+.markdown-content em {
+  color: var(--color-fg2);
+}
+
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  border: 1px solid var(--color-bg2);
+}
+
+.markdown-content details {
+  background: var(--color-bg1);
+  border: 1px solid var(--color-bg2);
+  border-radius: 4px;
+  margin: 8px 0;
+  padding: 8px 12px;
+}
+
+.markdown-content details[open] {
+  border-color: var(--color-blue-bright);
+}
+
+.markdown-content summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--color-blue-bright);
+}
+
+.markdown-content details p {
+  margin: 8px 0;
+}
+
+/* Task lists */
+.markdown-content input[type="checkbox"] {
+  margin-right: 8px;
+  accent-color: var(--color-green-bright);
+}
+
+/* Footnotes */
+.markdown-content .footnotes {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-bg2);
+  font-size: 12px;
+  color: var(--color-fg3);
+}
+
+.markdown-content .footnotes ol {
+  padding-left: 20px;
+}
+
+.markdown-content .footnotes li {
+  margin: 4px 0;
 }

@@ -3,21 +3,69 @@
 // Supports `compact` mode for the utilitarian dashboard
 
 import { Link } from 'react-router-dom';
+import { useState, useMemo } from 'react';
 import { useSessions } from '../../hooks/useData';
 import { useConfigStore } from '../../stores/configStore';
 import { Loading } from '../shared/Loading';
 import { EmptyState } from '../shared/EmptyState';
 import { ErrorState } from '../shared/ErrorState';
+import { SessionFilters } from './SessionFilters';
 
 interface Props {
   compact?: boolean;
   sectionIndex?: number;
 }
 
+type FilterState = {
+  dateRange: 'all' | 'today' | 'week' | 'month';
+  model?: string;
+  provider?: string;
+  search?: string;
+};
+
 export function SessionsView({ compact = false, sectionIndex }: Props) {
   const selectedSection = useConfigStore((s) => s.selectedSection);
   const selectedIndex = useConfigStore((s) => s.selectedIndex);
   const { data: sessions, isLoading, error } = useSessions({ enabled: true });
+  const [filters, setFilters] = useState<FilterState>({ dateRange: 'all' });
+  
+  const filteredSessions = useMemo(() => {
+    if (!sessions) return [];
+    let filtered = [...sessions];
+    
+    // Date filter
+    if (filters.dateRange !== 'all') {
+      const now = new Date();
+      const cutoff = new Date();
+      if (filters.dateRange === 'today') cutoff.setDate(now.getDate() - 1);
+      else if (filters.dateRange === 'week') cutoff.setDate(now.getDate() - 7);
+      else if (filters.dateRange === 'month') cutoff.setDate(now.getDate() - 30);
+      filtered = filtered.filter(s => new Date(s.timestamp) >= cutoff);
+    }
+    
+    // Model filter
+    if (filters.model) {
+      const term = filters.model.toLowerCase();
+      filtered = filtered.filter(s => s.modelId?.toLowerCase().includes(term));
+    }
+    
+    // Provider filter
+    if (filters.provider) {
+      const term = filters.provider.toLowerCase();
+      filtered = filtered.filter(s => s.provider?.toLowerCase().includes(term));
+    }
+    
+    // Search filter
+    if (filters.search) {
+      const term = filters.search.toLowerCase();
+      filtered = filtered.filter(s => 
+        s.title?.toLowerCase().includes(term) || 
+        s.preview?.toLowerCase().includes(term)
+      );
+    }
+    
+    return filtered;
+  }, [sessions, filters]);
 
   if (isLoading && !compact) return <Loading />;
   if (error && !compact) return <ErrorState message={error.message} onRetry={() => window.location.reload()} />;
@@ -30,7 +78,7 @@ export function SessionsView({ compact = false, sectionIndex }: Props) {
   if (compact) {
     return (
       <div className="font-mono">
-        {sessions.slice(0, 30).map((s, i) => (
+        {filteredSessions.slice(0, 30).map((s, i) => (
           <Link
             key={s.id}
             to={`/sessions/${s.id}`}
@@ -47,8 +95,8 @@ export function SessionsView({ compact = false, sectionIndex }: Props) {
             <span className="text-gray ml-2 shrink-0">{new Date(s.timestamp).toLocaleDateString()}</span>
           </Link>
         ))}
-        {sessions.length > 30 && (
-          <div className="text-[10px] text-gray py-1">... {sessions.length - 30} more</div>
+        {filteredSessions.length > 30 && (
+          <div className="text-[10px] text-gray py-1">... {filteredSessions.length - 30} more</div>
         )}
       </div>
     );
@@ -57,16 +105,17 @@ export function SessionsView({ compact = false, sectionIndex }: Props) {
   // Full mode: original decorated layout
   return (
     <div>
+      <SessionFilters onFilterChange={setFilters} />
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <span className="text-lg font-semibold">Sessions</span>
           <span className="text-sm text-fg4 bg-bg1 px-2.5 py-1">
-            {sessions.length} total
+            {filteredSessions.length} / {sessions.length}
           </span>
         </div>
       </div>
       <div className="space-y-2">
-        {sessions.map((session) => (
+        {filteredSessions.map((session) => (
           <Link
             key={session.id}
             to={`/sessions/${session.id}`}

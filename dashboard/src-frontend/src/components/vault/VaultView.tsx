@@ -43,9 +43,9 @@ export function VaultView({ compact = false, sectionIndex }: Props) {
             }`}
           >
             <span className="text-gray">[{note.type}]</span>{' '}
-            <span className="text-fg1 truncate">{note.title || note.slug}</span>
-            {note.tags && note.tags.length > 0 && (
-              <span className="text-gray ml-2">{note.tags.join(',')}</span>
+            <span className="text-fg1 truncate">{String(note.name || note.slug)}</span>
+            {typeof note.category === 'string' && note.category && (
+              <span className="text-fg5 ml-2">({note.category})</span>
             )}
           </button>
         ))}

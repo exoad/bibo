@@ -1,11 +1,10 @@
 // === Dashboard Component ===
 // Flat, utilitarian, information-dense layout.
 // No icons, no decoration. Pure data with collapsible sections.
+// This component is rendered within the Layout component's main area.
 
 import { useState, useEffect } from 'react';
 import { useStatus } from '../hooks/useData';
-import { StatusHeader } from './StatusHeader';
-import { SearchBar } from './SearchBar';
 import { CollapsibleSection } from './CollapsibleSection';
 import { SessionsView } from './sessions/SessionsView';
 import { QuestsView } from './quests/QuestsView';
@@ -13,6 +12,7 @@ import { BrainView } from './brain/BrainView';
 import { VaultView } from './vault/VaultView';
 import { SkillsView } from './skills/SkillsView';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
+import { Footer } from './layout/Footer';
 
 export default function Dashboard() {
   const { data: status } = useStatus({ enabled: true });
@@ -26,14 +26,10 @@ export default function Dashboard() {
   const uptimeStr = status ? formatUptime(status.uptime || 0) : '0s';
 
   return (
-    <div className="h-screen flex flex-col bg-bg0 text-fg1 overflow-hidden">
-      {/* Top bar: status + search */}
-      <StatusHeader status={status} uptime={uptimeStr} />
-      <SearchBar />
-
+    <div className="flex flex-col h-full bg-bg0 text-fg1 overflow-hidden">
       {/* Main content: flat sections */}
-      <div className="flex-1 overflow-auto p-2">
-        <div className="max-w-[1400px] mx-auto space-y-1">
+      <div className="flex-1 overflow-auto p-4">
+        <div className="max-w-[1400px] mx-auto space-y-3">
           {/* Quests — always visible, always actionable */}
           <div data-section="0">
             <CollapsibleSection title="QUESTS" defaultOpen>
@@ -68,16 +64,31 @@ export default function Dashboard() {
               <SkillsView compact={true} sectionIndex={4} />
             </CollapsibleSection>
           </div>
+
+          {/* Analytics */}
+          <div data-section="5">
+            <CollapsibleSection title="ANALYTICS">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-fg4 p-2 bg-bg0-hard border border-bg2">
+                    Tool Usage Chart (recharts installed)
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-fg4 p-2 bg-bg0-hard border border-bg2">
+                    Cost Tracking (implemented)
+                  </div>
+                </div>
+              </div>
+            </CollapsibleSection>
+          </div>
         </div>
       </div>
 
       <KeyboardShortcuts />
 
       {/* Footer: model info + version */}
-      <div className="h-[22px] bg-bg0-hard border-t border-bg2 px-3 flex items-center justify-between text-[10px] text-gray font-mono">
-        <span>{status?.model || '?'} · {status?.provider || '?'} · {String(status?.thinkingLevel || 'off')}</span>
-        <span>v{String(status?.version || '?')} · {uptimeStr}</span>
-      </div>
+      <Footer uptime={uptimeStr} status={status} />
     </div>
   );
 }

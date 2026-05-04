@@ -5,6 +5,7 @@ import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { Footer } from './Footer';
+import { ThemeToggle } from './ThemeToggle';
 
 interface LayoutProps {
   children?: React.ReactNode;
@@ -16,8 +17,9 @@ export function Layout({ children }: LayoutProps) {
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-auto p-4">
+        <main className="flex-1 overflow-auto p-4 relative">
           {children || <Outlet />}
+          <ThemeToggle />
         </main>
       </div>
       <Footer />

@@ -2,17 +2,25 @@
 // Status bar with polling interval, current time, and session duration
 
 import { useState, useEffect } from 'react';
-import { useConfigStore } from '../../stores/configStore';
 import {
   Clock,
   Lightning,
   Timer,
 } from '@phosphor-icons/react';
 
-export function Footer() {
+interface FooterProps {
+  uptime?: string;
+  status?: {
+    model?: string;
+    provider?: string;
+    thinkingLevel?: string;
+    version?: string;
+  };
+}
+
+export function Footer({ uptime, status }: FooterProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [sessionStart] = useState(Date.now());
-  const pollInterval = useConfigStore((s) => s.pollInterval);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -35,13 +43,21 @@ export function Footer() {
   return (
     <footer className="h-[32px] flex items-center justify-between px-4 bg-bg0-hard border-t border-bg2 text-xs text-fg4 flex-shrink-0">
       <div className="flex items-center gap-4">
-        <span className="flex items-center gap-1.5">
-          <Clock className="w-3 h-3" weight="regular" />
-          Polling: {pollInterval / 1000}s
-        </span>
+        {status?.model && (
+          <span className="flex items-center gap-1.5">
+            <Lightning className="w-3 h-3" weight="regular" />
+            {status.model}{status.provider ? `@${status.provider}` : ''}
+          </span>
+        )}
+        {status?.thinkingLevel && (
+          <span className="flex items-center gap-1.5">
+            <span className="text-fg4">Thinking:</span>
+            <span className="text-fg2">{status.thinkingLevel}</span>
+          </span>
+        )}
         <span className="flex items-center gap-1.5">
           <Timer className="w-3 h-3" weight="regular" />
-          {formatSessionDuration(Date.now() - sessionStart)}
+          {uptime || formatSessionDuration(Date.now() - sessionStart)}
         </span>
         <span className="flex items-center gap-1.5">
           <Clock className="w-3 h-3" weight="regular" />
@@ -50,7 +66,7 @@ export function Footer() {
       </div>
       <span className="flex items-center gap-1.5">
         <Lightning className="w-3 h-3" weight="regular" />
-        Bibo Dashboard v1.0
+        Bibo Dashboard v{status?.version || '1.0'}
       </span>
     </footer>
   );

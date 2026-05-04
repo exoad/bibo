@@ -22,7 +22,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { path: '/sessions', icon: BookOpen, label: 'Sessions' },
+  { path: '/', icon: BookOpen, label: 'Dashboard' },
   { path: '/brain', icon: Brain, label: 'Brain' },
   { path: '/vault', icon: Notebook, label: 'Vault' },
   { path: '/quests', icon: Clipboard, label: 'Quests' },

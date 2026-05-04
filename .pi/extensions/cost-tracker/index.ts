@@ -281,15 +281,9 @@ function getCurrentPricing(): ModelPricing {
     }
   }
   
-  // Provider fallbacks
+  // Provider fallback for Claude models
   if (normalized.includes('claude') || normalized.includes('anthropic')) {
     return MODEL_PRICING['claude-sonnet'];
-  }
-  if (normalized.includes('gpt-4') || normalized.includes('openai')) {
-    return MODEL_PRICING['gpt-4o'];
-  }
-  if (normalized.includes('o3') || normalized.includes('o4')) {
-    return MODEL_PRICING['o3'];
   }
   
   return MODEL_PRICING['default'];
@@ -300,12 +294,13 @@ function recalcCost(): void {
   
   // totalCost only includes synced token counters.
   // Tool call surcharges are session-local and shown in the widget separately.
+  // Using 5-minute cache write pricing for cache writes (most common)
   state.totalCost =
     (state.inputTokens / 1_000_000) * pricing.input_per_m +
     (state.outputTokens / 1_000_000) * pricing.output_per_m +
     (state.thinkingTokens / 1_000_000) * pricing.thinking_per_m +
     (state.cacheReadTokens / 1_000_000) * pricing.cache_read_per_m +
-    (state.cacheWriteTokens / 1_000_000) * pricing.cache_write_per_m +
+    (state.cacheWriteTokens / 1_000_000) * pricing.cache_write_5m_per_m +
     sessionToolCalls * TOOL_CALL_BASE +
     sessionToolSurchargeTotal;
   markDirty();
@@ -481,6 +476,7 @@ export default function (pi: ExtensionAPI) {
         `=== Fake Billing Report (Accumulated) ===`,
         `Model: ${modelName}`,
         `Pricing: in=$${pricing.input_per_m}/M out=$${pricing.output_per_m}/M`,
+        `Cache: read=$${pricing.cache_read_per_m}/M write(5m)=$${pricing.cache_write_5m_per_m}/M`,
         `Total cost: ${c}`,
         ``,
         `Token breakdown (synced across all instances):`,
@@ -488,7 +484,7 @@ export default function (pi: ExtensionAPI) {
         `  Output:    ${(state.outputTokens / 1000).toFixed(0)}K tokens  →  $${((state.outputTokens / 1_000_000) * pricing.output_per_m).toFixed(4)}`,
         `  Thinking:  ${(state.thinkingTokens / 1000).toFixed(0)}K tokens  →  $${((state.thinkingTokens / 1_000_000) * pricing.thinking_per_m).toFixed(4)}`,
         `  Cache read: ${(state.cacheReadTokens / 1000).toFixed(0)}K tokens  →  $${((state.cacheReadTokens / 1_000_000) * pricing.cache_read_per_m).toFixed(4)}`,
-        `  Cache write: ${(state.cacheWriteTokens / 1000).toFixed(0)}K tokens  →  $${((state.cacheWriteTokens / 1_000_000) * pricing.cache_write_per_m).toFixed(4)}`,
+        `  Cache write: ${(state.cacheWriteTokens / 1000).toFixed(0)}K tokens  →  $${((state.cacheWriteTokens / 1_000_000) * pricing.cache_write_5m_per_m).toFixed(4)}`,
         ``,
         `Tool calls (this session only): ${sessionToolCalls}  →  $${(sessionToolCalls * TOOL_CALL_BASE).toFixed(4)}`,
         `Tool surcharges (this session only): $${sessionToolSurchargeTotal.toFixed(4)}`,

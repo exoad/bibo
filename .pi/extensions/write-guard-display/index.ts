@@ -55,11 +55,7 @@ interface RenderTheme {
   getBgAnsi?(color: string): string;
 }
 
-interface ToolRenderResult {
-  type: "ui" | "text";
-  component?: unknown;
-  text?: string;
-}
+// Removed ToolRenderResult interface - renderers should return Component directly
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes}B`;
@@ -141,7 +137,7 @@ function registerToolOverrides(
       file_path: Type.String({ description: "Absolute file path" }),
       content: Type.String({ description: "Full file content" }),
     }),
-    renderCall: (args, options): ToolRenderResult => {
+    renderCall: (args, theme, context) => {
       const cfg = getEffectiveConfig();
       const filePath = String(args?.file_path ?? "");
       const content = String(args?.content ?? "");
@@ -149,56 +145,46 @@ function registerToolOverrides(
       // Check if file exists for guard warning
       const fileExists = existsSync(filePath);
       
-      const theme = options.theme as RenderTheme;
-      const pathDisplay = shortenPath(filePath, 60);
+      const themeObj = theme as RenderTheme;
+      const pathDisplay = shortenPath(filePath);
       const lineCount = content.split("\n").length;
       const sizeBytes = Buffer.byteLength(content, "utf8");
       
-      const container = Container.create({ direction: "row" });
+      const container = new Container();
       
       // Guard warning if file exists
       if (fileExists) {
-        container.add(
-          Text.create({
-            text: theme.fg("yellow", "⚠️ "),
-          }),
+        container.addChild(
+          new Text(themeObj.fg("yellow", "⚠️ "), 0, 0),
         );
       }
       
-      container.add(
-        Text.create({
-          text: theme.bold("Write"),
-        }),
+      container.addChild(
+        new Text(themeObj.bold("Write"), 0, 0),
       );
-      container.add(Spacer.create({ width: 1 }));
-      container.add(
-        Text.create({
-          text: theme.fg("cyan", pathDisplay),
-        }),
+      container.addChild(new Spacer(1));
+      container.addChild(
+        new Text(themeObj.fg("cyan", pathDisplay), 0, 0),
       );
-      container.add(Spacer.create({ width: 1 }));
-      container.add(
-        Text.create({
-          text: theme.fg(
+      container.addChild(new Spacer(1));
+      container.addChild(
+        new Text(
+          themeObj.fg(
             "dim",
             `(${lineCount} lines, ${formatSize(sizeBytes)})`,
           ),
-        }),
+          0, 0,
+        ),
       );
       
       if (fileExists) {
-        container.add(Spacer.create({ width: 1 }));
-        container.add(
-          Text.create({
-            text: theme.fg("red", "[WILL REFUSE - use Edit]"),
-          }),
+        container.addChild(new Spacer(1));
+        container.addChild(
+          new Text(themeObj.fg("red", "[WILL REFUSE - use Edit]"), 0, 0),
         );
       }
       
-      return {
-        type: "ui",
-        component: container,
-      };
+      return container;
     },
     async execute(_id, { file_path, content }) {
       // === WRITE GUARD PROTECTION ===
@@ -243,15 +229,12 @@ function registerToolOverrides(
         };
       }
     },
-    renderResult: (result, options): ToolRenderResult => {
+    renderResult: (result, options, theme, context) => {
       const cfg = getEffectiveConfig();
-      const theme = options.theme as RenderTheme;
+      const themeObj = theme as RenderTheme;
       
-      if (result.isError) {
-        return {
-          type: "text",
-          text: extractTextOutput(result.content) ?? "Error",
-        };
+      if (context.isError) {
+        return new Text(extractTextOutput(result.content) ?? "Error", 0, 0);
       }
       
       // Use pi-tool-display style diff rendering for new files
@@ -263,94 +246,14 @@ function registerToolOverrides(
         
         try {
           const content = readFileSync(filePath, "utf-8");
-          return renderWriteDiffResult(filePath, "", content, theme, cfg);
+          return renderWriteDiffResult(filePath, "", content, themeObj, cfg);
         } catch {
           // Fallback to simple text
         }
       }
       
-      return {
-        type: "text",
-        text,
-      };
+      return new Text(text, 0, 0);
     },
   });
 
-  // Edit tool with display enhancements
-  pi.registerTool({
-    name: "edit",
-    label: "Edit",
-    description: "Make targeted edits to an existing file. Replaces old_string with new_string.",
-    parameters: Type.Object({
-      file_path: Type.String({ description: "Absolute file path" }),
-      old_string: Type.String({ description: "Exact text to replace" }),
-      new_string: Type.String({ description: "Replacement text" }),
-    }),
-    renderCall: (args, options): ToolRenderResult => {
-      const filePath = String(args?.file_path ?? "");
-      const oldStr = String(args?.old_string ?? "");
-      const newStr = String(args?.new_string ?? "");
-      
-      const theme = options.theme as RenderTheme;
-      const pathDisplay = shortenPath(filePath, 60);
-      const oldLines = oldStr.split("\n").length;
-      const newLines = newStr.split("\n").length;
-      
-      const container = Container.create({ direction: "row" });
-      container.add(
-        Text.create({
-          text: theme.bold("Edit"),
-        }),
-      );
-      container.add(Spacer.create({ width: 1 }));
-      container.add(
-        Text.create({
-          text: theme.fg("cyan", pathDisplay),
-        }),
-      );
-      container.add(Spacer.create({ width: 1 }));
-      container.add(
-        Text.create({
-          text: theme.fg(
-            "dim",
-            `(${oldLines} → ${newLines} lines)`,
-          ),
-        }),
-      );
-      
-      return {
-        type: "ui",
-        component: container,
-      };
-    },
-    renderResult: (result, options, args): ToolRenderResult => {
-      const cfg = getEffectiveConfig();
-      const theme = options.theme as RenderTheme;
-      
-      if (result.isError) {
-        return {
-          type: "text",
-          text: extractTextOutput(result.content) ?? "Error",
-        };
-      }
-      
-      if (cfg.showEditDiff && args) {
-        const filePath = String(args.file_path ?? "");
-        const oldStr = String(args.old_string ?? "");
-        const newStr = String(args.new_string ?? "");
-        
-        try {
-          const currentContent = readFileSync(filePath, "utf-8");
-          return renderEditDiffResult(filePath, oldStr, newStr, currentContent, theme, cfg);
-        } catch {
-          // Fallback
-        }
-      }
-      
-      return {
-        type: "text",
-        text: extractTextOutput(result.content) ?? "Edited successfully",
-      };
-    },
-  });
 }

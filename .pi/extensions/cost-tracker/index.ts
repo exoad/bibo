@@ -20,15 +20,105 @@ const STATE_FILE = join(
   "state.json",
 );
 
-// ── Claude Sonnet pricing (per 1M tokens) ──────────────────────────────
-const PRICING = {
-  input_per_m: 3,       // $3 per 1M input tokens
-  output_per_m: 15,     // $15 per 1M output tokens
-  thinking_per_m: 3,    // $3 per 1M thinking tokens (same as input)
-  cache_read_per_m: 0.3, // $0.30 per 1M cache-read tokens
-  cache_write_per_m: 3.75, // $3.75 per 1M cache-write tokens (5m TTL)
-  tool_call_base: 0.005, // $0.005 per tool call
-} as const;
+// ── Model-specific pricing (per 1M tokens) ─────────────────────────────
+// Official Anthropic Claude API Pricing (May 2026)
+// Source: https://docs.anthropic.com/en/about-claude/pricing
+
+interface ModelPricing {
+  input_per_m: number;
+  output_per_m: number;
+  thinking_per_m: number;
+  cache_read_per_m: number;
+  cache_write_5m_per_m: number;
+  cache_write_1h_per_m: number;
+}
+
+const MODEL_PRICING: Record<string, ModelPricing> = {
+  // Claude Opus 4.x series - Most capable, complex reasoning, agentic coding
+  'claude-opus-4.7': { 
+    input_per_m: 5.0, output_per_m: 25.0, thinking_per_m: 5.0, 
+    cache_read_per_m: 0.50, cache_write_5m_per_m: 6.25, cache_write_1h_per_m: 10.0 
+  },
+  'claude-opus-4.6': { 
+    input_per_m: 5.0, output_per_m: 25.0, thinking_per_m: 5.0, 
+    cache_read_per_m: 0.50, cache_write_5m_per_m: 6.25, cache_write_1h_per_m: 10.0 
+  },
+  'claude-opus-4.5': { 
+    input_per_m: 5.0, output_per_m: 25.0, thinking_per_m: 5.0, 
+    cache_read_per_m: 0.50, cache_write_5m_per_m: 6.25, cache_write_1h_per_m: 10.0 
+  },
+  // Legacy Opus 4.x (higher pricing - deprecated)
+  'claude-opus-4.1': { 
+    input_per_m: 15.0, output_per_m: 75.0, thinking_per_m: 15.0, 
+    cache_read_per_m: 1.50, cache_write_5m_per_m: 18.75, cache_write_1h_per_m: 30.0 
+  },
+  'claude-opus-4': { 
+    input_per_m: 15.0, output_per_m: 75.0, thinking_per_m: 15.0, 
+    cache_read_per_m: 1.50, cache_write_5m_per_m: 18.75, cache_write_1h_per_m: 30.0 
+  },
+  
+  // Claude Sonnet 4.x series - Best speed/intelligence balance
+  'claude-sonnet-4.6': { 
+    input_per_m: 3.0, output_per_m: 15.0, thinking_per_m: 3.0, 
+    cache_read_per_m: 0.30, cache_write_5m_per_m: 3.75, cache_write_1h_per_m: 6.0 
+  },
+  'claude-sonnet-4.5': { 
+    input_per_m: 3.0, output_per_m: 15.0, thinking_per_m: 3.0, 
+    cache_read_per_m: 0.30, cache_write_5m_per_m: 3.75, cache_write_1h_per_m: 6.0 
+  },
+  'claude-sonnet-4': { 
+    input_per_m: 3.0, output_per_m: 15.0, thinking_per_m: 3.0, 
+    cache_read_per_m: 0.30, cache_write_5m_per_m: 3.75, cache_write_1h_per_m: 6.0 
+  },
+  
+  // Claude Haiku 4.x series - Fastest, high-throughput
+  'claude-haiku-4.5': { 
+    input_per_m: 1.0, output_per_m: 5.0, thinking_per_m: 1.0, 
+    cache_read_per_m: 0.10, cache_write_5m_per_m: 1.25, cache_write_1h_per_m: 2.0 
+  },
+  'claude-haiku-4': { 
+    input_per_m: 1.0, output_per_m: 5.0, thinking_per_m: 1.0, 
+    cache_read_per_m: 0.10, cache_write_5m_per_m: 1.25, cache_write_1h_per_m: 2.0 
+  },
+  
+  // Legacy Claude 3.x models
+  'claude-3-opus': { 
+    input_per_m: 15.0, output_per_m: 75.0, thinking_per_m: 15.0, 
+    cache_read_per_m: 1.50, cache_write_5m_per_m: 18.75, cache_write_1h_per_m: 30.0 
+  },
+  'claude-3-sonnet': { 
+    input_per_m: 3.0, output_per_m: 15.0, thinking_per_m: 3.0, 
+    cache_read_per_m: 0.30, cache_write_5m_per_m: 3.75, cache_write_1h_per_m: 6.0 
+  },
+  'claude-3-haiku': { 
+    input_per_m: 0.25, output_per_m: 1.25, thinking_per_m: 0.25, 
+    cache_read_per_m: 0.03, cache_write_5m_per_m: 0.30, cache_write_1h_per_m: 0.50 
+  },
+  
+  // Aliases for common model references (all point to latest 4.x pricing)
+  'claude-opus': { 
+    input_per_m: 5.0, output_per_m: 25.0, thinking_per_m: 5.0, 
+    cache_read_per_m: 0.50, cache_write_5m_per_m: 6.25, cache_write_1h_per_m: 10.0 
+  },
+  'claude-sonnet': { 
+    input_per_m: 3.0, output_per_m: 15.0, thinking_per_m: 3.0, 
+    cache_read_per_m: 0.30, cache_write_5m_per_m: 3.75, cache_write_1h_per_m: 6.0 
+  },
+  'claude-haiku': { 
+    input_per_m: 1.0, output_per_m: 5.0, thinking_per_m: 1.0, 
+    cache_read_per_m: 0.10, cache_write_5m_per_m: 1.25, cache_write_1h_per_m: 2.0 
+  },
+  
+  // Default fallback (Claude Sonnet 4.6 pricing)
+  'default': { 
+    input_per_m: 3.0, output_per_m: 15.0, thinking_per_m: 3.0, 
+    cache_read_per_m: 0.30, cache_write_5m_per_m: 3.75, cache_write_1h_per_m: 6.0 
+  },
+};
+
+const PRICING = MODEL_PRICING['default'];
+
+const TOOL_CALL_BASE = 0.005; // $0.005 per tool call
 
 // ── Per-tool call surcharges (fake, for drama) ─────────────────────────
 const TOOL_SURCHARGES: Record<string, number> = {
@@ -171,17 +261,52 @@ function formatCost(cents: number): string {
 // Per-session counters (NOT synced across instances)
 let sessionToolCalls = 0;
 let sessionToolSurchargeTotal = 0;
+let currentModelId: string | null = null;
+
+// Helper to get pricing for current model
+function getCurrentPricing(): ModelPricing {
+  if (!currentModelId) return MODEL_PRICING['default'];
+  
+  const normalized = currentModelId.toLowerCase();
+  
+  // Exact match
+  if (MODEL_PRICING[normalized]) {
+    return MODEL_PRICING[normalized];
+  }
+  
+  // Partial match
+  for (const [key, pricing] of Object.entries(MODEL_PRICING)) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return pricing;
+    }
+  }
+  
+  // Provider fallbacks
+  if (normalized.includes('claude') || normalized.includes('anthropic')) {
+    return MODEL_PRICING['claude-sonnet'];
+  }
+  if (normalized.includes('gpt-4') || normalized.includes('openai')) {
+    return MODEL_PRICING['gpt-4o'];
+  }
+  if (normalized.includes('o3') || normalized.includes('o4')) {
+    return MODEL_PRICING['o3'];
+  }
+  
+  return MODEL_PRICING['default'];
+}
 
 function recalcCost(): void {
+  const pricing = getCurrentPricing();
+  
   // totalCost only includes synced token counters.
   // Tool call surcharges are session-local and shown in the widget separately.
   state.totalCost =
-    (state.inputTokens / 1_000_000) * PRICING.input_per_m +
-    (state.outputTokens / 1_000_000) * PRICING.output_per_m +
-    (state.thinkingTokens / 1_000_000) * PRICING.thinking_per_m +
-    (state.cacheReadTokens / 1_000_000) * PRICING.cache_read_per_m +
-    (state.cacheWriteTokens / 1_000_000) * PRICING.cache_write_per_m +
-    sessionToolCalls * PRICING.tool_call_base +
+    (state.inputTokens / 1_000_000) * pricing.input_per_m +
+    (state.outputTokens / 1_000_000) * pricing.output_per_m +
+    (state.thinkingTokens / 1_000_000) * pricing.thinking_per_m +
+    (state.cacheReadTokens / 1_000_000) * pricing.cache_read_per_m +
+    (state.cacheWriteTokens / 1_000_000) * pricing.cache_write_per_m +
+    sessionToolCalls * TOOL_CALL_BASE +
     sessionToolSurchargeTotal;
   markDirty();
 }
@@ -205,6 +330,16 @@ function uptimeLine(): string {
 
 function costWidgetCompact(): string {
   const parts: string[] = [costLine()];
+  
+  // Show current model (abbreviated)
+  if (currentModelId) {
+    const shortModel = currentModelId
+      .replace(/^(anthropic\/|openai\/|google\/|mistral\/|fireworks\/)/, '')
+      .replace(/^(claude-|gpt-|o3|o4)/, '$1')
+      .slice(0, 12);
+    parts.push(shortModel);
+  }
+  
   if (state.inputTokens > 0) parts.push(`in:${(state.inputTokens / 1000).toFixed(0)}K`);
   if (state.outputTokens > 0) parts.push(`out:${(state.outputTokens / 1000).toFixed(0)}K`);
   if (state.thinkingTokens > 0) parts.push(`th:${(state.thinkingTokens / 1000).toFixed(0)}K`);
@@ -215,10 +350,20 @@ function costWidgetCompact(): string {
 }
 
 export default function (pi: ExtensionAPI) {
-  pi.on("session_start", async (_event, ctx) => {
+  pi.on("session_start", async (event, ctx) => {
     // NOTE: Cost state is NEVER reset — it accumulates across all sessions.
     // sessionStart tracks per-session uptime for the widget.
     sessionStart = Date.now();
+    
+    // Detect model from session context for accurate pricing
+    const session: any = (event as any).session;
+    if (session?.model?.id) {
+      currentModelId = session.model.id;
+    } else if (session?.modelId) {
+      currentModelId = session.modelId;
+    } else if (ctx?.model?.id) {
+      currentModelId = ctx.model.id;
+    }
 
     // Start file watcher for multi-instance sync
     startWatcher();
@@ -329,19 +474,23 @@ export default function (pi: ExtensionAPI) {
       "Print a detailed breakdown of the accumulated fake billing.",
     parameters: Type.Object({}),
     async execute() {
+      const pricing = getCurrentPricing();
       const c = formatCost(state.totalCost * 100);
+      const modelName = currentModelId || 'default';
       const lines = [
         `=== Fake Billing Report (Accumulated) ===`,
+        `Model: ${modelName}`,
+        `Pricing: in=$${pricing.input_per_m}/M out=$${pricing.output_per_m}/M`,
         `Total cost: ${c}`,
         ``,
         `Token breakdown (synced across all instances):`,
-        `  Input:     ${(state.inputTokens / 1000).toFixed(0)}K tokens  →  $${((state.inputTokens / 1_000_000) * PRICING.input_per_m).toFixed(4)}`,
-        `  Output:    ${(state.outputTokens / 1000).toFixed(0)}K tokens  →  $${((state.outputTokens / 1_000_000) * PRICING.output_per_m).toFixed(4)}`,
-        `  Thinking:  ${(state.thinkingTokens / 1000).toFixed(0)}K tokens  →  $${((state.thinkingTokens / 1_000_000) * PRICING.thinking_per_m).toFixed(4)}`,
-        `  Cache read: ${(state.cacheReadTokens / 1000).toFixed(0)}K tokens  →  $${((state.cacheReadTokens / 1_000_000) * PRICING.cache_read_per_m).toFixed(4)}`,
-        `  Cache write: ${(state.cacheWriteTokens / 1000).toFixed(0)}K tokens  →  $${((state.cacheWriteTokens / 1_000_000) * PRICING.cache_write_per_m).toFixed(4)}`,
+        `  Input:     ${(state.inputTokens / 1000).toFixed(0)}K tokens  →  $${((state.inputTokens / 1_000_000) * pricing.input_per_m).toFixed(4)}`,
+        `  Output:    ${(state.outputTokens / 1000).toFixed(0)}K tokens  →  $${((state.outputTokens / 1_000_000) * pricing.output_per_m).toFixed(4)}`,
+        `  Thinking:  ${(state.thinkingTokens / 1000).toFixed(0)}K tokens  →  $${((state.thinkingTokens / 1_000_000) * pricing.thinking_per_m).toFixed(4)}`,
+        `  Cache read: ${(state.cacheReadTokens / 1000).toFixed(0)}K tokens  →  $${((state.cacheReadTokens / 1_000_000) * pricing.cache_read_per_m).toFixed(4)}`,
+        `  Cache write: ${(state.cacheWriteTokens / 1000).toFixed(0)}K tokens  →  $${((state.cacheWriteTokens / 1_000_000) * pricing.cache_write_per_m).toFixed(4)}`,
         ``,
-        `Tool calls (this session only): ${sessionToolCalls}  →  $${(sessionToolCalls * PRICING.tool_call_base).toFixed(4)}`,
+        `Tool calls (this session only): ${sessionToolCalls}  →  $${(sessionToolCalls * TOOL_CALL_BASE).toFixed(4)}`,
         `Tool surcharges (this session only): $${sessionToolSurchargeTotal.toFixed(4)}`,
         ``,
         `⚠️  All costs are fake. You're running locally for free.`,

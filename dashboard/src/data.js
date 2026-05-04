@@ -358,29 +358,63 @@ export async function loadVault() {
             return [];
         }
 
-        const files = await readdir(VAULT_DIR, { withFileTypes: true });
         const notes = [];
 
-        for (const file of files) {
-            if (!file.isFile() || extname(file.name) !== '.md') continue;
+        // Read all .md files recursively, skipping _inbox and _index
+        const dirs = await readdir(VAULT_DIR, { withFileTypes: true });
 
-            const slug = file.name.replace('.md', '');
+        for (const dir of dirs) {
+            if (!dir.isFile() || extname(dir.name) !== '.md') continue;
 
-            // Skip inbox and index
+            const slug = dir.name.replace('.md', '');
             if (slug === '_inbox' || slug === '_index') continue;
 
             try {
-                const content = await readFile(join(VAULT_DIR, file.name), 'utf8');
+                const content = await readFile(join(VAULT_DIR, dir.name), 'utf8');
                 const parsed = parseVaultNote(content);
 
                 notes.push({
-                    slug: parsed.slug,
-                    name: parsed.name,
-                    type: parsed.type,
+                    slug: parsed.slug || slug,
+                    name: parsed.name || slug,
+                    type: parsed.type || 'reference',
                     created: parsed.created,
                     updated: parsed.updated,
                     content: parsed.content?.substring(0, 200) || ''
                 });
+            } catch {
+                continue;
+            }
+        }
+
+        // Also read notes in subdirectories (concepts/, log/, projects/, references/, patterns/)
+        for (const dir of dirs) {
+            if (!dir.isDirectory()) continue;
+
+            try {
+                const subFiles = await readdir(join(VAULT_DIR, dir.name), { withFileTypes: true });
+
+                for (const file of subFiles) {
+                    if (!file.isFile() || extname(file.name) !== '.md') continue;
+
+                    const slug = file.name.replace('.md', '');
+
+                    try {
+                        const content = await readFile(join(VAULT_DIR, dir.name, file.name), 'utf8');
+                        const parsed = parseVaultNote(content);
+
+                        notes.push({
+                            slug: parsed.slug || slug,
+                            name: parsed.name || slug,
+                            type: parsed.type || dir.name,
+                            created: parsed.created,
+                            updated: parsed.updated,
+                            content: parsed.content?.substring(0, 200) || '',
+                            category: dir.name
+                        });
+                    } catch {
+                        continue;
+                    }
+                }
             } catch {
                 continue;
             }
@@ -422,7 +456,7 @@ function parseVaultNote(content) {
     // Parse frontmatter
     if (lines[0] === '---') {
         bodyStart = 2;
-        for (let i = 2; i < lines.length; i++) {
+        for (let i = 1; i < lines.length; i++) {
             if (lines[i] === '---') {
                 bodyStart = i + 1;
                 break;
@@ -441,7 +475,7 @@ function parseVaultNote(content) {
 
     return {
         slug: frontmatter.slug || '',
-        name: frontmatter.name || slug,
+        name: frontmatter.name || '',
         type: frontmatter.type || 'reference',
         source: frontmatter.source,
         created: frontmatter.created,
@@ -495,54 +529,77 @@ export async function loadStatus() {
  * Load available skills from pi skills directory
  */
 export async function loadSkills() {
-    try {
-        const skillsDir = join(HOME, '.pi', 'npm', 'node_modules', '@rhobot-dev', 'rho', 'skills');
-        if (!existsSync(skillsDir)) {
-            return [];
+    const skills = [];
+    const seen = new Set();
+
+    // Find the project root by looking for package.json or .pi directory
+    let projectRoot = process.cwd();
+    let current = process.cwd();
+    while (current !== '/' && current !== '.') {
+        if (existsSync(join(current, '.pi', 'npm', 'node_modules'))) {
+            projectRoot = current;
+            break;
         }
+        current = join(current, '..');
+    }
 
-        const dirs = await readdir(skillsDir, { withFileTypes: true });
-        const skills = [];
+    // Try multiple skill directories in priority order
+    const candidateDirs = [
+        join(projectRoot, '.pi', 'npm', 'node_modules', '@rhobot-dev', 'rho', 'skills'),
+        join(projectRoot, '.pi', 'npm', 'node_modules', 'pi-web-access', 'skills'),
+        join(HOME, '.pi', 'npm', 'node_modules', '@rhobot-dev', 'rho', 'skills'),
+        join(HOME, '.pi', 'npm', 'node_modules', 'pi-web-access', 'skills'),
+    ];
 
-        for (const dir of dirs) {
-            if (!dir.isDirectory()) continue;
+    for (const skillsDir of candidateDirs) {
+        if (!existsSync(skillsDir)) continue;
 
-            const skillMd = join(skillsDir, dir.name, 'SKILL.md');
-            if (!existsSync(skillMd)) continue;
+        try {
+            const dirs = await readdir(skillsDir, { withFileTypes: true });
 
-            try {
-                const content = await readFile(skillMd, 'utf8');
-                const lines = content.split('\n');
+            for (const dir of dirs) {
+                if (!dir.isDirectory()) continue;
 
-                let name = dir.name;
-                let description = '';
+                const skillMd = join(skillsDir, dir.name, 'SKILL.md');
+                if (!existsSync(skillMd)) continue;
 
-                // Parse frontmatter
-                if (lines[0] === '---') {
-                    for (let i = 1; i < lines.length; i++) {
-                        if (lines[i] === '---') break;
-                        const match = lines[i].match(/^(\w+):\s*(.*)$/);
-                        if (match) {
-                            if (match[1] === 'name') name = match[2].trim();
-                            if (match[1] === 'description') description = match[2].trim();
+                // Skip duplicates
+                if (seen.has(dir.name)) continue;
+                seen.add(dir.name);
+
+                try {
+                    const content = await readFile(skillMd, 'utf8');
+                    const lines = content.split('\n');
+
+                    let name = dir.name;
+                    let description = '';
+
+                    // Parse frontmatter
+                    if (lines[0] === '---') {
+                        for (let i = 1; i < lines.length; i++) {
+                            if (lines[i] === '---') break;
+                            const match = lines[i].match(/^(\w+):\s*(.*)$/);
+                            if (match) {
+                                if (match[1] === 'name') name = match[2].trim();
+                                if (match[1] === 'description') description = match[2].trim();
+                            }
                         }
                     }
+
+                    skills.push({
+                        name: dir.name,
+                        description: description || 'No description'
+                    });
+                } catch {
+                    continue;
                 }
-
-                skills.push({
-                    name: dir.name,
-                    description: description || 'No description'
-                });
-            } catch {
-                continue;
             }
+        } catch {
+            continue;
         }
-
-        return skills;
-    } catch (e) {
-        console.error('Failed to load skills:', e.message);
-        return [];
     }
+
+    return skills;
 }
 
 // === Search ===

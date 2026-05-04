@@ -3,16 +3,24 @@
   "retry": { "enabled": true, "maxRetries": 2 },
   "packages": [
     "npm:@feniix/pi-code-reasoning",
-    "npm:pi-gsd",
-    "npm:pi-web-access",
-    "npm:pi-markdown-preview",
-    "npm:@rhobot-dev/rho",
-    "npm:pi-token-burden",
     "npm:@feniix/pi-statusline",
-    "npm:pi-review-loop",
-    "npm:pi-quests",
+    "npm:@juicesharp/rpiv-todo",
+    "npm:@rhobot-dev/rho",
+    "npm:@spences10/pi-confirm-destructive",
+    "npm:context-mode",
+    "npm:pi-ask-user",
+    "npm:pi-btw",
+    "npm:pi-formatter",
+    "npm:pi-gsd",
+    "npm:pi-lens",
+    "npm:pi-markdown-preview",
     "npm:pi-mermaid",
-    "npm:pi-rtk-optimizer"
+    "npm:pi-quests",
+    "npm:pi-review-loop",
+    "npm:pi-rewind",
+    "npm:pi-rtk-optimizer",
+    "npm:pi-token-burden",
+    "npm:pi-web-access"
   ],
   "bibo": {
     "default_model_profile": {

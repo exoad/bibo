@@ -90,13 +90,17 @@ export default function (pi: ExtensionAPI) {
 
     const opts: any = (event as any).systemPromptOptions ?? {};
     const lc = opts.littleCoder ?? {};
-    const budget: number = lc.knowledgeTokenBudget ?? 200;
+    let budget: number = lc.knowledgeTokenBudget ?? 200;
     if (budget <= 0) return;
     if (lc.isSubtask) return;
 
+    // Efficient defaults: cap knowledge budget to avoid context bloat
+    budget = Math.min(budget, 150);
+
     const base = event.systemPrompt ?? "";
     const contextLimit: number = lc.contextLimit ?? 8192;
-    if (estimateTokens(base) > contextLimit * 0.4) return;
+    // Be conservative about system prompt size to leave room for conversation
+    if (estimateTokens(base) > contextLimit * 0.35) return;
 
     const prompt = event.prompt ?? "";
     if (!prompt) return;
@@ -111,7 +115,10 @@ export default function (pi: ExtensionAPI) {
 
     const selected: KnowledgeEntry[] = [];
     let used = 0;
+    // Efficient default: only inject 1 knowledge entry max to avoid context bloat
+    const maxEntries = 1;
     for (const { entry } of scored) {
+      if (selected.length >= maxEntries) break;
       if (used + entry.tokenCost > budget) continue;
       selected.push(entry);
       used += entry.tokenCost;

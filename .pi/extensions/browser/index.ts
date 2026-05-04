@@ -70,7 +70,7 @@ async function ensureSession(): Promise<BrowserSession> {
       viewport: { width: 1280, height: 900 },
     });
     const page = await context.newPage();
-    page.setDefaultTimeout(20_000);
+    page.setDefaultTimeout(15_000);
     sess.pw = playwright;
     sess.browser = browser;
     sess.context = context;

@@ -7,6 +7,7 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
 let turnsThisRun = 0;
 let capForRun = 0;
+const DEFAULT_CAP = 30; // sensible default for all models
 
 function envCap(): number {
   const raw = process.env.LITTLE_CODER_MAX_TURNS;
@@ -20,7 +21,12 @@ export default function (pi: ExtensionAPI) {
     turnsThisRun = 0;
     const opts: any = (event as any).systemPromptOptions ?? {};
     const lcCap = Number(opts?.littleCoder?.maxTurns);
-    capForRun = Number.isFinite(lcCap) && lcCap > 0 ? lcCap : envCap();
+    let resolvedCap = Number.isFinite(lcCap) && lcCap > 0 ? lcCap : envCap();
+    // Apply sensible default cap for all models to prevent runaway loops
+    if (resolvedCap <= 0) {
+      resolvedCap = DEFAULT_CAP;
+    }
+    capForRun = resolvedCap;
   });
 
   pi.on("turn_start", async (_event, ctx) => {

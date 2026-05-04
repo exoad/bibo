@@ -94,13 +94,14 @@ function toLittleCoderOptions(p: ModelProfile): Record<string, unknown> {
   return {
     contextLimit: p.context_limit,
     maxTokens: p.max_tokens,
-    thinkingBudget: p.thinking_budget,
-    skillTokenBudget: p.skill_token_budget,
-    knowledgeTokenBudget: p.knowledge_token_budget,
+    // Conservative defaults to prevent rambling and context bloat
+    thinkingBudget: p.thinking_budget ?? 2048,
+    skillTokenBudget: p.skill_token_budget ?? 150,
+    knowledgeTokenBudget: p.knowledge_token_budget ?? 100,
     systemPromptBudget: p.system_prompt_budget,
     maxRetries: p.max_retries,
     temperature: p.temperature,
-    maxTurns: p.max_turns,
+    maxTurns: p.max_turns ?? 30,
     preferTextTools: p.prefer_text_tools,
     benchmark: process.env.LITTLE_CODER_BENCHMARK,
   };

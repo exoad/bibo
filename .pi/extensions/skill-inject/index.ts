@@ -95,14 +95,18 @@ function predictTools(userText: string): string[] {
 function selectSkills(prompt: string, budget: number, allowed?: Set<string>): ToolSkill[] {
   const selected: ToolSkill[] = [];
   let used = 0;
+
+  // Efficient defaults: cap budget and skill count to avoid context bloat
+  const effectiveBudget = Math.min(budget, 200);
+  const maxSkills = 2;
+
   const tryAdd = (name: string): void => {
+    if (selected.length >= maxSkills) return;
     const sk = skills.get(name);
     if (!sk || selected.includes(sk)) return;
     if (allowed && !allowed.has(name)) return;
-    if (used + sk.tokenCost > budget) return;
+    if (used + sk.tokenCost > effectiveBudget) return;
     // Anti-loop: skip the tool whose guidance was just injected last turn.
-    // Small models get stuck re-reading the same guidance and making the
-    // same tool call again.
     if (name === lastInjectedTool) return;
     selected.push(sk);
     used += sk.tokenCost;
@@ -111,24 +115,23 @@ function selectSkills(prompt: string, budget: number, allowed?: Set<string>): To
   // 1. Error recovery — last failed tool
   if (lastFailedTool) tryAdd(lastFailedTool);
 
-  // 2. Recency — last 2 tool calls, but skip the most recent after a
-  //    repeated_tool_call correction. Also limit to at most 1 recency pick
-  //    to avoid pushing the same tool repeatedly.
+  // 2. Recency — last tool calls, but skip the most recent after a
+  //    repeated_tool_call correction. Only pick ONE recency tool.
   const recencyCandidates = skipMostRecent
-    ? recentToolCalls.slice(1) // skip the very most recent
-    : recentToolCalls.slice(0, 4);
+    ? recentToolCalls.slice(1)
+    : recentToolCalls.slice(0, 2);
   let recencyUsed = false;
   for (const name of recencyCandidates) {
-    if (used >= budget) break;
-    if (recencyUsed) break; // only pick ONE recency tool, not all of them
+    if (used >= effectiveBudget) break;
+    if (recencyUsed) break;
     tryAdd(name);
     recencyUsed = true;
   }
 
   // 3. Intent prediction on the user's current prompt
-  if (used < budget) {
+  if (used < effectiveBudget) {
     for (const name of predictTools(prompt)) {
-      if (used >= budget) break;
+      if (used >= effectiveBudget) break;
       tryAdd(name);
     }
   }

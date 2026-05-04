@@ -11,7 +11,9 @@ import { state as sharedState } from "../shared-state";
 // a fresh extension instance is loaded per session via the session lifecycle.
 let previousToolCalls: ToolCall[] = [];
 let consecutiveFailures = 0;
-const MAX_CONSECUTIVE_CORRECTIONS = 2; // stop nudging after 2 failed corrections
+let lastCorrectionTime = 0;
+const MAX_CONSECUTIVE_CORRECTIONS = 1; // stop nudging after 1 failed correction
+const CORRECTION_COOLDOWN_MS = 30000; // minimum 30s between corrections to prevent spam
 
 export default function (pi: ExtensionAPI) {
   // Populate the known-tools set lazily by observing tool_execution events.
@@ -60,6 +62,17 @@ export default function (pi: ExtensionAPI) {
       );
       return;
     }
+
+    // Cooldown: don't send corrections more frequently than every 30 seconds
+    const now = Date.now();
+    if (now - lastCorrectionTime < CORRECTION_COOLDOWN_MS) {
+      ctx.ui.notify(
+        `quality-monitor: ${verdict.reason} (cooldown: ${Math.ceil((CORRECTION_COOLDOWN_MS - (now - lastCorrectionTime)) / 1000)}s remaining)`,
+        "warning",
+      );
+      return;
+    }
+    lastCorrectionTime = now;
 
     // Track the last tool call name for better correction messages
     const lastToolName = currentCalls.length > 0 ? currentCalls[0].name : undefined;

@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, watch } from "fs";
 import { join } from "path";
 import { execSync } from "child_process";
 
@@ -86,7 +86,10 @@ function saveState(): void {
     if (!existsSync(dir)) {
       execSync(`mkdir -p "${dir}"`);
     }
-    writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), "utf-8");
+    // Atomic write to avoid corruption when multiple instances write simultaneously
+    const tmpFile = STATE_FILE + ".tmp";
+    writeFileSync(tmpFile, JSON.stringify(state, null, 2), "utf-8");
+    execSync(`mv -f "${tmpFile}" "${STATE_FILE}"`);
   } catch {
     // Silently fail — we don't want disk errors to crash the agent
   }
@@ -95,7 +98,66 @@ function saveState(): void {
 // Load persisted state on init (accumulates across sessions)
 const state: CostState = loadState();
 
+// ── Multi-instance sync ──────────────────────────────────────────────
+let watcher: ReturnType<typeof watch> | null = null;
+let isExternalUpdate = false;
+let lastMtime = 0;
+
+function reloadState(): void {
+  try {
+    if (!existsSync(STATE_FILE)) return;
+    const stat = require("fs").statSync(STATE_FILE);
+    if (stat.mtimeMs === lastMtime) return;
+    lastMtime = stat.mtimeMs;
+
+    const raw = readFileSync(STATE_FILE, "utf-8");
+    const fresh = JSON.parse(raw) as CostState;
+
+    // Only sync TOKEN counters (global across all instances).
+    // toolCalls and toolSurchargeTotal are SESSION-SPECIFIC and must NOT
+    // be merged — otherwise each instance sees all other instances' tool
+    // calls in its widget and cost breakdown.
+    state.inputTokens = Math.max(state.inputTokens, fresh.inputTokens);
+    state.outputTokens = Math.max(state.outputTokens, fresh.outputTokens);
+    state.thinkingTokens = Math.max(state.thinkingTokens, fresh.thinkingTokens);
+    state.cacheReadTokens = Math.max(state.cacheReadTokens, fresh.cacheReadTokens);
+    state.cacheWriteTokens = Math.max(state.cacheWriteTokens, fresh.cacheWriteTokens);
+    // NOTE: toolCalls and toolSurchargeTotal are NOT synced — they are
+    // per-session counters. Each instance tracks its own tool usage.
+    recalcCost();
+  } catch {
+    // Ignore read/parse errors
+  }
+}
+
+function startWatcher(): void {
+  if (watcher) return;
+  try {
+    const dir = STATE_FILE.split("/").slice(0, -1).join("/");
+    if (!existsSync(dir)) {
+      execSync(`mkdir -p "${dir}"`);
+    }
+    watcher = watch(dir, { persistent: false, recursive: false }, (eventType, filename) => {
+      if (filename === "state.json" && eventType === "change") {
+        isExternalUpdate = true;
+        reloadState();
+        isExternalUpdate = false;
+      }
+    });
+  } catch {
+    // fs.watch may not work on all platforms — periodic poll is the fallback
+  }
+}
+
+function stopWatcher(): void {
+  if (watcher) {
+    try { watcher.close(); } catch {}
+    watcher = null;
+  }
+}
+
 function markDirty(): void {
+  if (isExternalUpdate) return; // Don't re-save when reacting to external changes
   saveState();
 }
 
@@ -106,15 +168,21 @@ function formatCost(cents: number): string {
   return `$${dollars.toFixed(2)}`;
 }
 
+// Per-session counters (NOT synced across instances)
+let sessionToolCalls = 0;
+let sessionToolSurchargeTotal = 0;
+
 function recalcCost(): void {
+  // totalCost only includes synced token counters.
+  // Tool call surcharges are session-local and shown in the widget separately.
   state.totalCost =
     (state.inputTokens / 1_000_000) * PRICING.input_per_m +
     (state.outputTokens / 1_000_000) * PRICING.output_per_m +
     (state.thinkingTokens / 1_000_000) * PRICING.thinking_per_m +
     (state.cacheReadTokens / 1_000_000) * PRICING.cache_read_per_m +
     (state.cacheWriteTokens / 1_000_000) * PRICING.cache_write_per_m +
-    state.toolCalls * PRICING.tool_call_base +
-    state.toolSurchargeTotal;
+    sessionToolCalls * PRICING.tool_call_base +
+    sessionToolSurchargeTotal;
   markDirty();
 }
 
@@ -124,6 +192,7 @@ function costLine(): string {
 
 let sessionStart = Date.now();
 let widgetTimer: ReturnType<typeof setInterval> | undefined;
+let syncTimer: ReturnType<typeof setInterval> | undefined;
 
 function uptimeLine(): string {
   const s = Math.floor((Date.now() - sessionStart) / 1000);
@@ -139,7 +208,8 @@ function costWidgetCompact(): string {
   if (state.inputTokens > 0) parts.push(`in:${(state.inputTokens / 1000).toFixed(0)}K`);
   if (state.outputTokens > 0) parts.push(`out:${(state.outputTokens / 1000).toFixed(0)}K`);
   if (state.thinkingTokens > 0) parts.push(`th:${(state.thinkingTokens / 1000).toFixed(0)}K`);
-  if (state.toolCalls > 0) parts.push(`tc:${state.toolCalls}`);
+  // Show session-local tool call count (not synced)
+  if (sessionToolCalls > 0) parts.push(`tc:${sessionToolCalls}`);
   parts.push(uptimeLine().trim());
   return parts.join(" ");
 }
@@ -150,6 +220,14 @@ export default function (pi: ExtensionAPI) {
     // sessionStart tracks per-session uptime for the widget.
     sessionStart = Date.now();
 
+    // Start file watcher for multi-instance sync
+    startWatcher();
+    // Fallback: poll every 2s to catch changes from other instances
+    // (fs.watch is unreliable on some platforms / network drives)
+    syncTimer = setInterval(() => {
+      reloadState();
+    }, 2000);
+
     if (!ctx.hasUI) return;
     // Update widget every 1s
     widgetTimer = setInterval(() => {
@@ -159,6 +237,8 @@ export default function (pi: ExtensionAPI) {
     // Cleanup on session end
     pi.on("session_shutdown", () => {
       if (widgetTimer) clearInterval(widgetTimer);
+      if (syncTimer) clearInterval(syncTimer);
+      stopWatcher();
       ctx.ui.setWidget("cost", undefined);
     });
   });
@@ -182,10 +262,11 @@ export default function (pi: ExtensionAPI) {
     const toolName = (event as any).toolName;
     if (typeof toolName !== "string") return;
 
-    state.toolCalls++;
-    state.toolSurchargeTotal += TOOL_SURCHARGES[toolName] || 0;
+    // Session-local counters (not synced across instances)
+    sessionToolCalls++;
+    sessionToolSurchargeTotal += TOOL_SURCHARGES[toolName] || 0;
 
-    // Estimate input tokens from tool call argument size
+    // Estimate input tokens from tool call argument size (synced)
     const input: any = (event as any).input ?? (event as any).args;
     const argStr = typeof input === "string" ? input : JSON.stringify(input);
     state.inputTokens += argStr.length;
@@ -253,18 +334,18 @@ export default function (pi: ExtensionAPI) {
         `=== Fake Billing Report (Accumulated) ===`,
         `Total cost: ${c}`,
         ``,
-        `Token breakdown:`,
+        `Token breakdown (synced across all instances):`,
         `  Input:     ${(state.inputTokens / 1000).toFixed(0)}K tokens  →  $${((state.inputTokens / 1_000_000) * PRICING.input_per_m).toFixed(4)}`,
         `  Output:    ${(state.outputTokens / 1000).toFixed(0)}K tokens  →  $${((state.outputTokens / 1_000_000) * PRICING.output_per_m).toFixed(4)}`,
         `  Thinking:  ${(state.thinkingTokens / 1000).toFixed(0)}K tokens  →  $${((state.thinkingTokens / 1_000_000) * PRICING.thinking_per_m).toFixed(4)}`,
         `  Cache read: ${(state.cacheReadTokens / 1000).toFixed(0)}K tokens  →  $${((state.cacheReadTokens / 1_000_000) * PRICING.cache_read_per_m).toFixed(4)}`,
         `  Cache write: ${(state.cacheWriteTokens / 1000).toFixed(0)}K tokens  →  $${((state.cacheWriteTokens / 1_000_000) * PRICING.cache_write_per_m).toFixed(4)}`,
         ``,
-        `Tool calls: ${state.toolCalls}  →  $${(state.toolCalls * PRICING.tool_call_base).toFixed(4)}`,
-        `Tool surcharges: $${state.toolSurchargeTotal.toFixed(4)}`,
+        `Tool calls (this session only): ${sessionToolCalls}  →  $${(sessionToolCalls * PRICING.tool_call_base).toFixed(4)}`,
+        `Tool surcharges (this session only): $${sessionToolSurchargeTotal.toFixed(4)}`,
         ``,
         `⚠️  All costs are fake. You're running locally for free.`,
-        `💾 State persisted to: ${STATE_FILE}`,
+        `💾 Token state synced to: ${STATE_FILE}`,
       ];
       return {
         content: [{ type: "text", text: lines.join("\n") }],

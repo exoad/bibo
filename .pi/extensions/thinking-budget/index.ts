@@ -18,6 +18,7 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 // trace are lost, but the commit-to-action pressure is the same.
 
 const DEFAULT_BUDGET = 4096;
+const EFFICIENT_BUDGET = 2048; // cap for all models to prevent rambling
 
 // Per-turn rolling state
 let thinkingChars = 0;
@@ -35,10 +36,12 @@ export default function (pi: ExtensionAPI) {
     const lc = opts.littleCoder ?? {};
     const profileBudget = Number(lc.thinkingBudget);
     const envBudget = Number(process.env.LITTLE_CODER_THINKING_BUDGET);
-    budgetForTurn =
+    let resolvedBudget =
       (Number.isFinite(profileBudget) && profileBudget > 0 && profileBudget) ||
       (Number.isFinite(envBudget) && envBudget > 0 && envBudget) ||
       DEFAULT_BUDGET;
+    // Cap thinking budget for efficiency — prevents rambling across all model sizes
+    budgetForTurn = Math.min(resolvedBudget, EFFICIENT_BUDGET);
   });
 
   pi.on("turn_start", async () => {
@@ -68,8 +71,9 @@ export default function (pi: ExtensionAPI) {
     if (!aborted) return;
     aborted = false;
     pi.setThinkingLevel("off");
+    // Concise nudge — works for all model sizes
     pi.sendUserMessage(
-      "[thinking budget exceeded] Please commit to an implementation now. Stop deliberating and use your tools to make progress.",
+      "Stop deliberating. Use a tool to make progress now.",
       { deliverAs: "followUp" },
     );
   });

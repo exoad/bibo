@@ -47,17 +47,20 @@ function greetingComponent(tui: TUI, _theme: Theme): Component & { dispose?(): v
   }, 1000);
 
   return {
-    render: (_width: number) => [greetingLine()],
+    render: (width: number) => {
+      const line = greetingLine();
+      // Ensure widget content stays within bounds and doesn't overflow
+      if (line.length > width) {
+        return [line.slice(0, width - 3) + "..."];
+      }
+      return [line];
+    },
     invalidate: () => {},
     dispose: () => clearInterval(timer),
   };
 }
 
 export default function (pi: ExtensionAPI) {
-  pi.on("session_start", async (_event, ctx) => {
-    if (!ctx.hasUI) return;
-    sessionStart = Date.now();
-    ctx.ui.setWidget("greeting", greetingComponent);
-    ctx.ui.notify("bibo scaffold loaded", "info");
-  });
+  // Widget removed — was leaking time/date lines into content stream.
+  // Cost-tracker widget is the only one kept.
 }

@@ -64,14 +64,31 @@ function loadProviders(): ProviderConfig[] {
           contextWindow: 131072,
           maxTokens: 4096,
         },
-	{
+        {
           id: "bibo-qwen3.6-flash",
           name: "Bibo Qwen3.6-Flash (jackbox)",
           reasoning: true,
           input: ["text"],
           contextWindow: 65536,
           maxTokens: 4096,
-	},
+        },
+        // Small model variants with conservative defaults
+        {
+          id: "bibo-qwen3.6-3b",
+          name: "Bibo Qwen3.6 3B (jackbox)",
+          reasoning: true,
+          input: ["text"],
+          contextWindow: 32768,
+          maxTokens: 2048,
+        },
+        {
+          id: "bibo-qwen3.6-7b",
+          name: "Bibo Qwen3.6 7B (jackbox)",
+          reasoning: true,
+          input: ["text"],
+          contextWindow: 32768,
+          maxTokens: 4096,
+        },
       ],
     },
     {
@@ -103,6 +120,10 @@ export default function (pi: ExtensionAPI) {
       api: provider.api,
       models: provider.models.map((model) => ({
         ...model,
+        reasoning: model.reasoning ?? false,
+        input: (model.input ?? ["text"]) as Array<"text" | "image">,
+        contextWindow: model.contextWindow ?? 32768,
+        maxTokens: model.maxTokens ?? 4096,
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
       })),
     });

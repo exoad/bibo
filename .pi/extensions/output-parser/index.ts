@@ -45,11 +45,9 @@ export default function (pi: ExtensionAPI) {
     // Queue a follow-up that will be delivered after the agent finishes.
     // This nudges the model to use native tool calling on its next turn
     // rather than emitting fenced blocks in text.
+    // Concise nudge — works for all model sizes.
     pi.sendUserMessage(
-      "Your previous response embedded tool calls inside text (e.g. fenced ```tool blocks or <tool_call> tags). " +
-      "Please re-issue them as NATIVE tool calls. If the intended calls were: " +
-      calls.map((c) => `${c.name}(${JSON.stringify(c.input)})`).join("; ") +
-      " — please execute them now using your tool-call channel, not text.",
+      "Use native tool calls, not text blocks. Call tools directly instead of writing fenced code blocks.",
       { deliverAs: "followUp" },
     );
   });

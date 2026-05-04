@@ -4,6 +4,7 @@ import { Type } from "@sinclair/typebox";
 // Timer extension — adds a temporal dimension to bibo.
 // Tracks session start, task-level marks, and elapsed time reporting.
 // Provides three tools: TimeElapsed, MarkStart, MarkEnd.
+// NOTE: Widget removed — was leaking into content stream.
 
 interface TimerState {
   sessionStart: number;
@@ -38,12 +39,11 @@ function elapsedSince(t: number): string {
 }
 
 export default function (pi: ExtensionAPI) {
-  pi.on("session_start", async (_event, ctx) => {
+  pi.on("session_start", async () => {
     state.sessionStart = Date.now();
     state.marks = [];
     state.currentTask = undefined;
     state.currentTaskStart = undefined;
-    // Timer started — time shown in greeting widget
   });
 
   pi.on("session_shutdown", async () => {
@@ -140,6 +140,7 @@ export default function (pi: ExtensionAPI) {
       state.currentTask = l;
       state.currentTaskStart = Date.now();
 
+      // Request widget re-render to show the new task
       return {
         content: [{ type: "text", text: `Started '${l}' at ${new Date().toISOString()}` }],
         details: {},
@@ -171,6 +172,7 @@ export default function (pi: ExtensionAPI) {
       state.currentTask = undefined;
       state.currentTaskStart = undefined;
 
+      // Request widget re-render to clear the task display
       return {
         content: [{ type: "text", text: `Task '${task}' ended. Duration: ${duration}. Session total: ${sessionDuration}` }],
         details: {},

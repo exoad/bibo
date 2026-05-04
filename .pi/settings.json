@@ -18,7 +18,7 @@
     "npm:pi-quests",
     "npm:pi-review-loop",
     "npm:pi-rewind",
-    "npm:pi-rtk-optimizer",
+    "npm:pi-rtk-optimizer@0.7.0",
     "npm:pi-token-burden",
     "npm:pi-web-access"
   ],

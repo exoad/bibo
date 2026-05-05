@@ -22,7 +22,7 @@ const RESET = "\x1b[39m";
 // Pattern: dim → dim → build → FLASH → hold → hold → fade → dim
 const BREATH_FRAMES = [
 	`${DIM}${FULL_BLOCK}${RESET}`, // 0 - barely visible (rest)
-	`${DIM}${FULL_BLOCK}${RESET}`, // 1 - 
+	`${DIM}${FULL_BLOCK}${RESET}`, // 1 -
 	`${MID}${FULL_BLOCK}${RESET}`, // 2 - building up
 	`${BRIGHT}${FULL_BLOCK}${RESET}`, // 3 - FLASH bright
 	`${BRIGHT}${FULL_BLOCK}${RESET}`, // 4 - hold bright

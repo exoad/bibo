@@ -42,14 +42,26 @@ function c(color, text) {
   return `${_C[color] || ''}${text}${_C.reset}`;
 }
 
-// --- ASCII Art Banner (spells BIBO) ---
+// --- ASCII Art Banner with Mascot ---
 const BANNER = [
-  c('bold', c('magenta', ' ██████╗ ██╗██████╗  ██████╗ ')),
-  c('bold', c('magenta', ' ██╔══██╗██║██╔══██╗██╔═══██╗')),
-  c('bold', c('magenta', ' ██████╔╝██║██████╔╝██║   ██║')),
-  c('bold', c('magenta', ' ██╔══██╗██║██╔══██╗██║   ██║')),
-  c('bold', c('magenta', ' ██████╔╝██║██████╔╝╚██████╔╝')),
-  c('bold', c('magenta', ' ╚═════╝ ╚═╝╚═════╝  ╚═════╝ ')),
+  c('dim', '           ┌────┐'),
+  c('dim', '           │') + c('cyan', '◠  ◠') + c('dim', '│'),
+  c('dim', '           └──┬──┘'),
+  c('dim', '              │'),
+  c('bold', c('magenta', '  ██████╗ ██╗██████╗  ██████╗ ')),
+  c('bold', c('magenta', '  ██╔══██╗██║██╔══██╗██╔═══██╗')),
+  c('bold', c('magenta', '  ██████╔╝██║██████╔╝██║   ██║')),
+  c('bold', c('magenta', '  ██╔══██╗██║██╔══██╗██║   ██║')),
+  c('bold', c('magenta', '  ██████╔╝██║██████╔╝╚██████╔╝')),
+  c('bold', c('magenta', '  ╚═════╝ ╚═╝╚═════╝  ╚═════╝ ')),
+].join('\n');
+
+// --- Compact Icon (for prompts, small displays) ---
+const ICON = [
+  c('cyan', '┌──┐'),
+  c('cyan', '│') + c('white', '◠◠') + c('cyan', '│'),
+  c('cyan', '└┬─┘'),
+  c('magenta', ' BIBO'),
 ].join('\n');
 
 // --- Single multi-label loading bar ---

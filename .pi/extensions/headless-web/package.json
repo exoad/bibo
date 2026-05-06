@@ -1,0 +1,17 @@
+{
+  "name": "headless-web",
+  "version": "1.0.0",
+  "description": "Headless web access extension for bibo - no browser required",
+  "type": "module",
+  "main": "index.ts",
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.5.0",
+    "linkedom": "^0.16.0",
+    "turndown": "^7.2.0"
+  }
+}

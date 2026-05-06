@@ -13,138 +13,138 @@ import { homedir } from "node:os";
 // turn-cap) read them from a single source of truth.
 
 interface ModelProfile {
-  context_limit?: number;
-  max_tokens?: number;
-  thinking_budget?: number;
-  skill_token_budget?: number;
-  knowledge_token_budget?: number;
-  system_prompt_budget?: number;
-  max_retries?: number;
-  temperature?: number;
-  max_turns?: number;
-  prefer_text_tools?: boolean;
-  benchmark_overrides?: Record<string, Partial<ModelProfile>>;
+	context_limit?: number;
+	max_tokens?: number;
+	thinking_budget?: number;
+	skill_token_budget?: number;
+	knowledge_token_budget?: number;
+	system_prompt_budget?: number;
+	max_retries?: number;
+	temperature?: number;
+	max_turns?: number;
+	prefer_text_tools?: boolean;
+	benchmark_overrides?: Record<string, Partial<ModelProfile>>;
 }
 
 interface LittleCoderSettings {
-  default_model_profile?: ModelProfile;
-  model_profiles?: Record<string, ModelProfile>;
+	default_model_profile?: ModelProfile;
+	model_profiles?: Record<string, ModelProfile>;
 }
 
 let settings: LittleCoderSettings | null = null;
 let loaded = false;
 
 function repoRoot(): string {
-  const here = dirname(fileURLToPath(import.meta.url));
-  return join(here, "..", "..", "..");
+	const here = dirname(fileURLToPath(import.meta.url));
+	return join(here, "..", "..", "..");
 }
 
 function loadSettings(): void {
-  if (loaded) return;
-  loaded = true;
-  // Try project .pi/settings.json first, then user's home directory .pi/agent/settings.json
-  // Use homedir() instead of process.env.HOME for cross-platform compatibility
-  // (process.env.HOME is unset on Windows; homedir() handles USERPROFILE)
-  const home = homedir();
-  const candidates = [
-    join(repoRoot(), ".pi", "settings.json"),
-    join(home, ".pi", "agent", "settings.json"),
-  ];
-  for (const p of candidates) {
-    if (!existsSync(p)) continue;
-    try {
-      const raw = JSON.parse(readFileSync(p, "utf-8"));
-      if (raw && typeof raw === "object" && raw.bibo) {
-        settings = raw.bibo as LittleCoderSettings;
-        return;
-      }
-    } catch {
-      // ignore malformed settings
-    }
-  }
+	if (loaded) return;
+	loaded = true;
+	// Try project .pi/settings.json first, then user's home directory .pi/agent/settings.json
+	// Use homedir() instead of process.env.HOME for cross-platform compatibility
+	// (process.env.HOME is unset on Windows; homedir() handles USERPROFILE)
+	const home = homedir();
+	const candidates = [
+		join(repoRoot(), ".pi", "settings.json"),
+		join(home, ".pi", "agent", "settings.json"),
+	];
+	for (const p of candidates) {
+		if (!existsSync(p)) continue;
+		try {
+			const raw = JSON.parse(readFileSync(p, "utf-8"));
+			if (raw && typeof raw === "object" && raw.bibo) {
+				settings = raw.bibo as LittleCoderSettings;
+				return;
+			}
+		} catch {
+			// ignore malformed settings
+		}
+	}
 }
 
 function resolveProfile(providerSlashModel: string): ModelProfile {
-  loadSettings();
-  if (!settings) return {};
-  const profiles = settings.model_profiles ?? {};
-  const bench = process.env.LITTLE_CODER_BENCHMARK;
+	loadSettings();
+	if (!settings) return {};
+	const profiles = settings.model_profiles ?? {};
+	const bench = process.env.LITTLE_CODER_BENCHMARK;
 
-  // Exact match first, then prefix match (mirrors get_model_profile)
-  let base: ModelProfile | undefined = profiles[providerSlashModel];
-  if (!base) {
-    for (const [pattern, p] of Object.entries(profiles)) {
-      if (providerSlashModel.startsWith(pattern)) {
-        base = p;
-        break;
-      }
-    }
-  }
-  if (!base) base = settings.default_model_profile ?? {};
+	// Exact match first, then prefix match (mirrors get_model_profile)
+	let base: ModelProfile | undefined = profiles[providerSlashModel];
+	if (!base) {
+		for (const [pattern, p] of Object.entries(profiles)) {
+			if (providerSlashModel.startsWith(pattern)) {
+				base = p;
+				break;
+			}
+		}
+	}
+	if (!base) base = settings.default_model_profile ?? {};
 
-  // Strip + apply benchmark_overrides if set
-  const { benchmark_overrides, ...basePlain } = { ...base };
-  if (bench && benchmark_overrides && benchmark_overrides[bench]) {
-    return { ...basePlain, ...benchmark_overrides[bench] };
-  }
-  return basePlain;
+	// Strip + apply benchmark_overrides if set
+	const { benchmark_overrides, ...basePlain } = { ...base };
+	if (bench && benchmark_overrides && benchmark_overrides[bench]) {
+		return { ...basePlain, ...benchmark_overrides[bench] };
+	}
+	return basePlain;
 }
 
 function toLittleCoderOptions(p: ModelProfile): Record<string, unknown> {
-  return {
-    contextLimit: p.context_limit,
-    maxTokens: p.max_tokens,
-    // Conservative defaults to prevent rambling and context bloat
-    thinkingBudget: p.thinking_budget ?? 2048,
-    skillTokenBudget: p.skill_token_budget ?? 150,
-    knowledgeTokenBudget: p.knowledge_token_budget ?? 100,
-    systemPromptBudget: p.system_prompt_budget,
-    maxRetries: p.max_retries,
-    temperature: p.temperature,
-    maxTurns: p.max_turns ?? 30,
-    preferTextTools: p.prefer_text_tools,
-    benchmark: process.env.LITTLE_CODER_BENCHMARK,
-  };
+	return {
+		contextLimit: p.context_limit,
+		maxTokens: p.max_tokens,
+		// Conservative defaults to prevent rambling and context bloat
+		thinkingBudget: p.thinking_budget ?? 8192,
+		skillTokenBudget: p.skill_token_budget ?? 300,
+		knowledgeTokenBudget: p.knowledge_token_budget ?? 200,
+		systemPromptBudget: p.system_prompt_budget,
+		maxRetries: p.max_retries,
+		temperature: p.temperature,
+		maxTurns: p.max_turns ?? 80,
+		preferTextTools: p.prefer_text_tools,
+		benchmark: process.env.LITTLE_CODER_BENCHMARK,
+	};
 }
 
 export default function (pi: ExtensionAPI) {
-  // Shared across handlers so before_provider_request can re-read the most
-  // recently resolved temperature without re-parsing settings every turn.
-  let resolvedTemperature: number | undefined;
+	// Shared across handlers so before_provider_request can re-read the most
+	// recently resolved temperature without re-parsing settings every turn.
+	let resolvedTemperature: number | undefined;
 
-  pi.on("before_agent_start", async (event, ctx) => {
-    const model = ctx.model;
-    if (!model) return;
-    const key = `${model.provider}/${model.id}`;
-    const profile = resolveProfile(key);
+	pi.on("before_agent_start", async (event, ctx) => {
+		const model = ctx.model;
+		if (!model) return;
+		const key = `${model.provider}/${model.id}`;
+		const profile = resolveProfile(key);
 
-    const opts: any = (event as any).systemPromptOptions ?? {};
-    const existing = opts.littleCoder ?? {};
-    const resolved = toLittleCoderOptions(profile);
+		const opts: any = (event as any).systemPromptOptions ?? {};
+		const existing = opts.littleCoder ?? {};
+		const resolved = toLittleCoderOptions(profile);
 
-    // Merge; existing (set by other extensions earlier) wins over defaults
-    // from this profile, but undefined existing values fall back.
-    opts.littleCoder = { ...resolved, ...existing };
-    // Re-copy so undefined existing values don't overwrite resolved values
-    for (const [k, v] of Object.entries(resolved)) {
-      if (opts.littleCoder[k] === undefined) opts.littleCoder[k] = v;
-    }
+		// Merge; existing (set by other extensions earlier) wins over defaults
+		// from this profile, but undefined existing values fall back.
+		opts.littleCoder = { ...resolved, ...existing };
+		// Re-copy so undefined existing values don't overwrite resolved values
+		for (const [k, v] of Object.entries(resolved)) {
+			if (opts.littleCoder[k] === undefined) opts.littleCoder[k] = v;
+		}
 
-    resolvedTemperature = opts.littleCoder.temperature;
-  });
+		resolvedTemperature = opts.littleCoder.temperature;
+	});
 
-  // Inject the profile's temperature onto the outgoing provider payload.
-  // Without this, pi-ai uses the provider default (typically ~0.8 for
-  // jackbox), which adds measurable stochastic variance on hard
-  // algorithmic exercises. Matches bibo's profiles[].temperature=0.3.
-  //
-  // IMPORTANT: pi's runner passes payload by reference but only adopts
-  // *returned* values. Mutating in place is discarded between handlers, so
-  // we build a new payload object and return it explicitly.
-  pi.on("before_provider_request", async (event) => {
-    if (resolvedTemperature === undefined) return;
-    const payload: any = (event as any).payload;
-    if (!payload || typeof payload !== "object") return;
-    return { ...payload, temperature: resolvedTemperature };
-  });
+	// Inject the profile's temperature onto the outgoing provider payload.
+	// Without this, pi-ai uses the provider default (typically ~0.8 for
+	// jackbox), which adds measurable stochastic variance on hard
+	// algorithmic exercises. Matches bibo's profiles[].temperature=0.3.
+	//
+	// IMPORTANT: pi's runner passes payload by reference but only adopts
+	// *returned* values. Mutating in place is discarded between handlers, so
+	// we build a new payload object and return it explicitly.
+	pi.on("before_provider_request", async (event) => {
+		if (resolvedTemperature === undefined) return;
+		const payload: any = (event as any).payload;
+		if (!payload || typeof payload !== "object") return;
+		return { ...payload, temperature: resolvedTemperature };
+	});
 }

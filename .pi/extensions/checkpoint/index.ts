@@ -11,56 +11,70 @@ import { homedir } from "node:os";
 const tracked = new Map<string, Set<string>>(); // sessionId -> absolute paths
 
 function checkpointDir(sessionId: string): string {
-  const dir = join(homedir(), ".bibo", "checkpoints", sessionId);
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  return dir;
+	const dir = join(homedir(), ".bibo", "checkpoints", sessionId);
+	if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+	return dir;
 }
 
 function safeName(filePath: string): string {
-  return filePath.replace(/[^A-Za-z0-9._-]/g, "_").slice(-200);
+	return filePath.replace(/[^A-Za-z0-9._-]/g, "_").slice(-200);
 }
 
 function backupIfNeeded(sessionId: string, filePath: string): void {
-  if (!sessionId || !filePath) return;
-  let session = tracked.get(sessionId);
-  if (!session) {
-    session = new Set();
-    tracked.set(sessionId, session);
-  }
-  if (session.has(filePath)) return;
-  session.add(filePath);
-  try {
-    if (existsSync(filePath)) {
-      const content = readFileSync(filePath);
-      writeFileSync(join(checkpointDir(sessionId), safeName(filePath)), content);
-    } else {
-      // Sentinel: file didn't exist before modification
-      writeFileSync(
-        join(checkpointDir(sessionId), safeName(filePath) + ".absent"),
-        "",
-      );
-    }
-  } catch {
-    // Silent — checkpointing is best-effort
-  }
+	if (!sessionId || !filePath) return;
+	let session = tracked.get(sessionId);
+	if (!session) {
+		session = new Set();
+		tracked.set(sessionId, session);
+	}
+	if (session.has(filePath)) return;
+	session.add(filePath);
+	try {
+		if (existsSync(filePath)) {
+			const content = readFileSync(filePath);
+			writeFileSync(
+				join(checkpointDir(sessionId), safeName(filePath)),
+				content,
+			);
+		} else {
+			// Sentinel: file didn't exist before modification
+			writeFileSync(
+				join(checkpointDir(sessionId), safeName(filePath) + ".absent"),
+				"",
+			);
+		}
+	} catch {
+		// Silent — checkpointing is best-effort
+	}
 }
 
 export default function (pi: ExtensionAPI) {
-  let currentSessionId = "default";
+	let currentSessionId = "default";
 
-  pi.on("session_start", async (_event, ctx) => {
-    currentSessionId = ctx.sessionManager.getSessionFile()?.split("/").pop() ?? "default";
-  });
+	pi.on("session_start", async (_event, ctx) => {
+		currentSessionId =
+			ctx.sessionManager.getSessionFile()?.split("/").pop() ?? "default";
+	});
 
-  pi.on("tool_call", async (event) => {
-    const name = (event as any).toolName;
-    if (name !== "write" && name !== "Write" && name !== "edit" && name !== "Edit") {
-      return;
-    }
-    const input: any = (event as any).input ?? (event as any).args;
-    const filePath = input?.file_path;
-    if (typeof filePath === "string") {
-      backupIfNeeded(currentSessionId, filePath);
-    }
-  });
+	pi.on("session_shutdown", async () => {
+		// Clean up tracked paths for this session to prevent memory leak
+		tracked.delete(currentSessionId);
+	});
+
+	pi.on("tool_call", async (event) => {
+		const name = (event as any).toolName;
+		if (
+			name !== "write" &&
+			name !== "Write" &&
+			name !== "edit" &&
+			name !== "Edit"
+		) {
+			return;
+		}
+		const input: any = (event as any).input ?? (event as any).args;
+		const filePath = input?.file_path;
+		if (typeof filePath === "string") {
+			backupIfNeeded(currentSessionId, filePath);
+		}
+	});
 }

@@ -44,16 +44,10 @@ function c(color, text) {
 
 // --- ASCII Art Banner with Mascot ---
 const BANNER = [
-  c('dim', '           ┌────┐'),
-  c('dim', '           │') + c('cyan', '◠  ◠') + c('dim', '│'),
-  c('dim', '           └──┬──┘'),
-  c('dim', '              │'),
-  c('bold', c('magenta', '  ██████╗ ██╗██████╗  ██████╗ ')),
-  c('bold', c('magenta', '  ██╔══██╗██║██╔══██╗██╔═══██╗')),
-  c('bold', c('magenta', '  ██████╔╝██║██████╔╝██║   ██║')),
-  c('bold', c('magenta', '  ██╔══██╗██║██╔══██╗██║   ██║')),
-  c('bold', c('magenta', '  ██████╔╝██║██████╔╝╚██████╔╝')),
-  c('bold', c('magenta', '  ╚═════╝ ╚═╝╚═════╝  ╚═════╝ ')),
+  c('dim', '  ┌──────┐'),
+  c('dim', '  │') + c('cyan', '●   ●') + c('dim', '│'),
+  c('dim', '  └──────┘'),
+  c('bold', c('magenta', '  BIBO')),
 ].join('\n');
 
 // --- Compact Icon (for prompts, small displays) ---

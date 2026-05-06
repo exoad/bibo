@@ -1,10 +1,14 @@
 {
-  "compaction": { "enabled": true },
-  "retry": { "enabled": true, "maxRetries": 2 },
+  "compaction": {
+    "enabled": true
+  },
+  "retry": {
+    "enabled": true,
+    "maxRetries": 2
+  },
   "packages": [
     "npm:@feniix/pi-code-reasoning",
     "npm:@feniix/pi-statusline",
-    "npm:@juicesharp/rpiv-todo",
     "npm:@rhobot-dev/rho",
     "npm:@spences10/pi-confirm-destructive",
     "npm:context-mode",
@@ -19,13 +23,14 @@
     "npm:pi-rewind",
     "npm:pi-rtk-optimizer@0.7.0",
     "npm:pi-token-burden",
-    "npm:pi-web-access"
+    "npm:pi-web-access",
+    "local:headless-web"
   ],
   "bibo": {
     "default_model_profile": {
       "context_limit": 131072,
       "max_tokens": 4096,
-      "thinking_budget": 2048,
+      "thinking_budget": 8192,
       "skill_token_budget": 300,
       "knowledge_token_budget": 200,
       "system_prompt_budget": 0,

@@ -7,37 +7,37 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
 let turnsThisRun = 0;
 let capForRun = 0;
-const DEFAULT_CAP = 30; // sensible default for all models
+const DEFAULT_CAP = 120; // higher cap for fast models that can complete multi-step tasks quickly
 
 function envCap(): number {
-  const raw = process.env.LITTLE_CODER_MAX_TURNS;
-  if (!raw) return 0;
-  const n = parseInt(raw, 10);
-  return Number.isFinite(n) && n > 0 ? n : 0;
+	const raw = process.env.LITTLE_CODER_MAX_TURNS;
+	if (!raw) return 0;
+	const n = parseInt(raw, 10);
+	return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
 export default function (pi: ExtensionAPI) {
-  pi.on("before_agent_start", async (event) => {
-    turnsThisRun = 0;
-    const opts: any = (event as any).systemPromptOptions ?? {};
-    const lcCap = Number(opts?.littleCoder?.maxTurns);
-    let resolvedCap = Number.isFinite(lcCap) && lcCap > 0 ? lcCap : envCap();
-    // Apply sensible default cap for all models to prevent runaway loops
-    if (resolvedCap <= 0) {
-      resolvedCap = DEFAULT_CAP;
-    }
-    capForRun = resolvedCap;
-  });
+	pi.on("before_agent_start", async (event) => {
+		turnsThisRun = 0;
+		const opts: any = (event as any).systemPromptOptions ?? {};
+		const lcCap = Number(opts?.littleCoder?.maxTurns);
+		let resolvedCap = Number.isFinite(lcCap) && lcCap > 0 ? lcCap : envCap();
+		// Apply sensible default cap for all models to prevent runaway loops
+		if (resolvedCap <= 0) {
+			resolvedCap = DEFAULT_CAP;
+		}
+		capForRun = resolvedCap;
+	});
 
-  pi.on("turn_start", async (_event, ctx) => {
-    if (capForRun <= 0) return;
-    turnsThisRun++;
-    if (turnsThisRun > capForRun) {
-      ctx.ui.notify(
-        `turn-cap: reached max_turns=${capForRun}, aborting`,
-        "warning",
-      );
-      ctx.abort();
-    }
-  });
+	pi.on("turn_start", async (_event, ctx) => {
+		if (capForRun <= 0) return;
+		turnsThisRun++;
+		if (turnsThisRun > capForRun) {
+			ctx.ui.notify(
+				`turn-cap: reached max_turns=${capForRun}, aborting`,
+				"warning",
+			);
+			ctx.abort();
+		}
+	});
 }

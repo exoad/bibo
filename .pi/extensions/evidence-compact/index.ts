@@ -15,18 +15,19 @@ import { getSessionStore } from "../evidence/index.ts";
 // matches the Python version so replay stays deterministic.
 
 const BRIDGE_TEMPLATE = (n: number): string =>
-  `[Preserved evidence from earlier in the conversation follows.] ` +
-  `${n} evidence entr${n === 1 ? "y remains" : "ies remain"} available via ` +
-  `EvidenceList and EvidenceGet.`;
+	`[Preserved evidence from earlier in the conversation follows.] ` +
+	`${n} evidence entr${n === 1 ? "y remains" : "ies remain"} available via ` +
+	`EvidenceList and EvidenceGet.`;
 
 export default function (pi: ExtensionAPI) {
-  pi.on("session_compact", async (_event, ctx) => {
-    const store = getSessionStore();
-    if (store.length === 0) return;
-    ctx.ui.notify(
-      `evidence-compact: ${store.length} evidence entries preserved across compaction`,
-      "info",
-    );
-    pi.sendUserMessage(BRIDGE_TEMPLATE(store.length), { deliverAs: "followUp" });
-  });
+	pi.on("session_compact", async (_event, ctx) => {
+		const store = getSessionStore();
+		if (store.length === 0) return;
+		ctx.ui.notify(
+			`evidence-compact: ${store.length} evidence entries preserved across compaction`,
+			"info",
+		);
+		// Don't send follow-up bridge messages — evidence is already in extension state
+		// and the model can access it via EvidenceList/EvidenceGet when needed.
+	});
 }

@@ -17,8 +17,8 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 // to an implementation" — the concrete savings of preserving the partial
 // trace are lost, but the commit-to-action pressure is the same.
 
-const DEFAULT_BUDGET = 4096;
-const EFFICIENT_BUDGET = 2048; // cap for all models to prevent rambling
+const DEFAULT_BUDGET = 8192;
+const EFFICIENT_BUDGET = 16384; // higher cap for fast models that think quickly
 
 // Per-turn rolling state
 let thinkingChars = 0;
@@ -26,55 +26,51 @@ let budgetForTurn = DEFAULT_BUDGET;
 let aborted = false;
 
 function charsToTokens(chars: number): number {
-  // Matches local/context_manager.estimate_tokens (len/3.5)
-  return Math.ceil(chars / 3.5);
+	// Matches local/context_manager.estimate_tokens (len/3.5)
+	return Math.ceil(chars / 3.5);
 }
 
 export default function (pi: ExtensionAPI) {
-  pi.on("before_agent_start", async (event) => {
-    const opts: any = (event as any).systemPromptOptions ?? {};
-    const lc = opts.littleCoder ?? {};
-    const profileBudget = Number(lc.thinkingBudget);
-    const envBudget = Number(process.env.LITTLE_CODER_THINKING_BUDGET);
-    let resolvedBudget =
-      (Number.isFinite(profileBudget) && profileBudget > 0 && profileBudget) ||
-      (Number.isFinite(envBudget) && envBudget > 0 && envBudget) ||
-      DEFAULT_BUDGET;
-    // Cap thinking budget for efficiency — prevents rambling across all model sizes
-    budgetForTurn = Math.min(resolvedBudget, EFFICIENT_BUDGET);
-  });
+	pi.on("before_agent_start", async (event) => {
+		const opts: any = (event as any).systemPromptOptions ?? {};
+		const lc = opts.littleCoder ?? {};
+		const profileBudget = Number(lc.thinkingBudget);
+		const envBudget = Number(process.env.LITTLE_CODER_THINKING_BUDGET);
+		const resolvedBudget =
+			(Number.isFinite(profileBudget) && profileBudget > 0 && profileBudget) ||
+			(Number.isFinite(envBudget) && envBudget > 0 && envBudget) ||
+			DEFAULT_BUDGET;
+		// Cap thinking budget for efficiency — prevents rambling across all model sizes
+		budgetForTurn = Math.min(resolvedBudget, EFFICIENT_BUDGET);
+	});
 
-  pi.on("turn_start", async () => {
-    thinkingChars = 0;
-    aborted = false;
-  });
+	pi.on("turn_start", async () => {
+		thinkingChars = 0;
+		aborted = false;
+	});
 
-  pi.on("message_update", async (event, ctx) => {
-    const ev: any = (event as any).assistantMessageEvent;
-    if (!ev) return;
-    if (ev.type !== "thinking_delta") return;
-    const delta = typeof ev.delta === "string" ? ev.delta : "";
-    thinkingChars += delta.length;
-    if (aborted) return;
-    const tokens = charsToTokens(thinkingChars);
-    if (tokens > budgetForTurn) {
-      aborted = true;
-      ctx.ui.notify(
-        `thinking-budget: ${tokens} > ${budgetForTurn} — aborting turn, will retry with thinking off`,
-        "warning",
-      );
-      ctx.abort();
-    }
-  });
+	pi.on("message_update", async (event, ctx) => {
+		const ev: any = (event as any).assistantMessageEvent;
+		if (!ev) return;
+		if (ev.type !== "thinking_delta") return;
+		const delta = typeof ev.delta === "string" ? ev.delta : "";
+		thinkingChars += delta.length;
+		if (aborted) return;
+		const tokens = charsToTokens(thinkingChars);
+		if (tokens > budgetForTurn) {
+			aborted = true;
+			ctx.ui.notify(
+				`thinking-budget: ${tokens} > ${budgetForTurn} — aborting turn, will retry with thinking off`,
+				"warning",
+			);
+			ctx.abort();
+		}
+	});
 
-  pi.on("turn_end", async (_event, _ctx) => {
-    if (!aborted) return;
-    aborted = false;
-    pi.setThinkingLevel("off");
-    // Concise nudge — works for all model sizes
-    pi.sendUserMessage(
-      "Stop deliberating. Use a tool to make progress now.",
-      { deliverAs: "followUp" },
-    );
-  });
+	pi.on("turn_end", async (_event, _ctx) => {
+		if (!aborted) return;
+		aborted = false;
+		pi.setThinkingLevel("off");
+		// Don't send follow-up nudges — just disable thinking and let the model continue
+	});
 }

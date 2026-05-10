@@ -1,5 +1,12 @@
 import { readdir, readFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	writeFileSync,
+	appendFileSync,
+	readFileSync,
+	unlinkSync,
+} from "node:fs";
 import { join, extname } from "node:path";
 import { homedir } from "node:os";
 
@@ -628,6 +635,285 @@ export async function loadSkills() {
 
 		return skills;
 	});
+}
+
+// === Chat Data ===
+
+const CHATS_DIR = join(HOME, ".pi", "agent", "chats");
+
+/**
+ * Ensure chats directory exists
+ */
+function ensureChatsDir() {
+	if (!existsSync(CHATS_DIR)) {
+		try {
+			mkdirSync(CHATS_DIR, { recursive: true });
+		} catch {}
+	}
+}
+
+/**
+ * Generate unique chat ID
+ */
+function generateChatId() {
+	return `chat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+/**
+ * Load all chats
+ */
+export async function loadChats() {
+	return cached("chats", async () => {
+		try {
+			ensureChatsDir();
+			if (!existsSync(CHATS_DIR)) {
+				return [];
+			}
+
+			const chats = [];
+			const files = await readdir(CHATS_DIR, { withFileTypes: true });
+
+			for (const file of files) {
+				if (!file.isFile() || extname(file.name) !== ".jsonl") continue;
+
+				try {
+					const content = await readFile(join(CHATS_DIR, file.name), "utf8");
+					const lines = content.split("\n").filter((l) => l.trim());
+
+					if (lines.length === 0) continue;
+
+					// Parse header (first line)
+					let header = null;
+					try {
+						header = JSON.parse(lines[0]);
+					} catch {
+						continue;
+					}
+
+					// Count messages
+					let messageCount = 0;
+					for (let i = 1; i < lines.length; i++) {
+						try {
+							const line = JSON.parse(lines[i]);
+							if (line.type === "message") {
+								messageCount++;
+							}
+						} catch {}
+					}
+
+					chats.push({
+						id: header.id || file.name.replace(".jsonl", ""),
+						title: header.title || "Untitled Chat",
+						createdAt: header.createdAt || header.timestamp,
+						updatedAt: header.updatedAt || header.timestamp,
+						messageCount,
+						cwd: header.cwd || "",
+						model: header.model,
+						provider: header.provider,
+					});
+				} catch {}
+			}
+
+			// Sort by updatedAt desc
+			chats.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+			return chats;
+		} catch (e) {
+			console.error("Failed to load chats:", e.message);
+			return [];
+		}
+	});
+}
+
+/**
+ * Load single chat with messages
+ */
+export async function loadChat(id) {
+	const cacheKey = `chat:${id}`;
+	return cached(cacheKey, async () => {
+		try {
+			const filePath = join(CHATS_DIR, `${id}.jsonl`);
+			if (!existsSync(filePath)) {
+				return null;
+			}
+
+			const content = await readFile(filePath, "utf8");
+			const lines = content.split("\n").filter((l) => l.trim());
+
+			if (lines.length === 0) return null;
+
+			// Parse header
+			let header = null;
+			try {
+				header = JSON.parse(lines[0]);
+			} catch {
+				return null;
+			}
+
+			// Parse messages
+			const messages = [];
+			for (let i = 1; i < lines.length; i++) {
+				try {
+					const line = JSON.parse(lines[i]);
+					if (line.type === "message") {
+						messages.push(line.message);
+					}
+				} catch {}
+			}
+
+			return {
+				id: header.id || id,
+				title: header.title || "Untitled Chat",
+				createdAt: header.createdAt || header.timestamp,
+				updatedAt: header.updatedAt || header.timestamp,
+				cwd: header.cwd || "",
+				model: header.model,
+				provider: header.provider,
+				messages,
+			};
+		} catch (e) {
+			console.error(`Failed to load chat ${id}:`, e.message);
+			return null;
+		}
+	});
+}
+
+/**
+ * Create new chat
+ */
+export async function createChat({
+	title = "New Chat",
+	cwd = "",
+	model,
+	provider,
+} = {}) {
+	try {
+		ensureChatsDir();
+		const id = generateChatId();
+		const timestamp = new Date().toISOString();
+
+		const header = {
+			type: "header",
+			id,
+			title,
+			createdAt: timestamp,
+			updatedAt: timestamp,
+			cwd,
+			model,
+			provider,
+		};
+
+		const filePath = join(CHATS_DIR, `${id}.jsonl`);
+		writeFileSync(filePath, JSON.stringify(header) + "\n", "utf8");
+
+		// Invalidate cache
+		cache.delete("chats");
+
+		return {
+			id,
+			title,
+			createdAt: timestamp,
+			updatedAt: timestamp,
+			messageCount: 0,
+			cwd,
+			model,
+			provider,
+		};
+	} catch (e) {
+		console.error("Failed to create chat:", e.message);
+		throw e;
+	}
+}
+
+/**
+ * Save message to chat
+ */
+export async function saveMessage(chatId, message) {
+	try {
+		const filePath = join(CHATS_DIR, `${chatId}.jsonl`);
+		if (!existsSync(filePath)) {
+			throw new Error(`Chat ${chatId} not found`);
+		}
+
+		// Append message
+		const line = JSON.stringify({ type: "message", message }) + "\n";
+		appendFileSync(filePath, line, "utf8");
+
+		// Update header timestamp
+		const content = readFileSync(filePath, "utf8");
+		const lines = content.split("\n").filter((l) => l.trim());
+		if (lines.length > 0) {
+			const header = JSON.parse(lines[0]);
+			header.updatedAt = new Date().toISOString();
+			lines[0] = JSON.stringify(header);
+			writeFileSync(filePath, lines.join("\n") + "\n", "utf8");
+		}
+
+		// Invalidate caches
+		cache.delete("chats");
+		cache.delete(`chat:${chatId}`);
+
+		return true;
+	} catch (e) {
+		console.error(`Failed to save message to chat ${chatId}:`, e.message);
+		throw e;
+	}
+}
+
+/**
+ * Update chat metadata
+ */
+export async function updateChat(id, updates) {
+	try {
+		const filePath = join(CHATS_DIR, `${id}.jsonl`);
+		if (!existsSync(filePath)) {
+			throw new Error(`Chat ${id} not found`);
+		}
+
+		const content = readFileSync(filePath, "utf8");
+		const lines = content.split("\n").filter((l) => l.trim());
+		if (lines.length === 0) {
+			throw new Error(`Chat ${id} is empty`);
+		}
+
+		// Update header
+		const header = JSON.parse(lines[0]);
+		Object.assign(header, updates, { updatedAt: new Date().toISOString() });
+		lines[0] = JSON.stringify(header);
+
+		writeFileSync(filePath, lines.join("\n") + "\n", "utf8");
+
+		// Invalidate caches
+		cache.delete("chats");
+		cache.delete(`chat:${id}`);
+
+		return { ...header, messageCount: lines.length - 1 };
+	} catch (e) {
+		console.error(`Failed to update chat ${id}:`, e.message);
+		throw e;
+	}
+}
+
+/**
+ * Delete chat
+ */
+export async function deleteChat(id) {
+	try {
+		const filePath = join(CHATS_DIR, `${id}.jsonl`);
+		if (!existsSync(filePath)) {
+			throw new Error(`Chat ${id} not found`);
+		}
+
+		unlinkSync(filePath);
+
+		// Invalidate caches
+		cache.delete("chats");
+		cache.delete(`chat:${id}`);
+
+		return true;
+	} catch (e) {
+		console.error(`Failed to delete chat ${id}:`, e.message);
+		throw e;
+	}
 }
 
 // === Search ===

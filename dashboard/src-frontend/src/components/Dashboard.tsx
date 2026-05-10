@@ -29,6 +29,7 @@ export default function Dashboard() {
 	// Sync URL with store on mount and when path changes
 	useEffect(() => {
 		const validViews = [
+			"chat",
 			"sessions",
 			"brain",
 			"vault",

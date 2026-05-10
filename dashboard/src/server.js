@@ -15,7 +15,13 @@ import {
 	loadStatus,
 	loadSkills,
 	search,
+	loadChats,
+	loadChat,
+	createChat,
+	deleteChat,
+	updateChat,
 } from "./data.js";
+import { chatService } from "./chat-service.js";
 
 const __dirname = import.meta.dirname;
 const FRONTEND_DIR = join(__dirname, "frontend");
@@ -150,6 +156,33 @@ async function handleApi(req, res, pathname, url) {
 
 	if (resource === "skill" && subResource === "trigger") {
 		return await handleSkillTrigger(req, res, subId);
+	}
+
+	// Chat routes
+	if (resource === "chats") {
+		if (!id) {
+			if (req.method === "GET") {
+				return await handleChatsList(req, res);
+			}
+			if (req.method === "POST") {
+				return await handleChatCreate(req, res);
+			}
+		}
+		if (id) {
+			if (req.method === "GET") {
+				return await handleChatDetail(req, res, id);
+			}
+			if (req.method === "DELETE") {
+				return await handleChatDelete(req, res, id);
+			}
+			if (req.method === "PATCH") {
+				return await handleChatUpdate(req, res, id);
+			}
+		}
+	}
+
+	if (resource === "chat" && subResource === "stream") {
+		return await handleChatStream(req, res, url);
 	}
 
 	// Unknown API route
@@ -321,6 +354,138 @@ async function handleSkillTrigger(req, res, name) {
 			message: `Skill triggered: ${name}`,
 		}),
 	);
+}
+
+// === Chat Handlers ===
+
+async function handleChatsList(req, res) {
+	try {
+		const chats = await loadChats();
+		res.writeHead(200, { "Content-Type": "application/json" });
+		res.end(JSON.stringify({ chats, count: chats.length }));
+	} catch (e) {
+		res.writeHead(500, { "Content-Type": "application/json" });
+		res.end(JSON.stringify({ error: e.message, code: "DATA_READ_ERROR" }));
+	}
+}
+
+async function handleChatCreate(req, res) {
+	try {
+		let body = "";
+		req.on("data", (chunk) => (body += chunk));
+		req.on("end", async () => {
+			try {
+				const params = body ? JSON.parse(body) : {};
+				const chat = await createChat(params);
+				res.writeHead(201, { "Content-Type": "application/json" });
+				res.end(JSON.stringify({ chat }));
+			} catch (e) {
+				res.writeHead(400, { "Content-Type": "application/json" });
+				res.end(JSON.stringify({ error: e.message, code: "CREATE_FAILED" }));
+			}
+		});
+	} catch (e) {
+		res.writeHead(500, { "Content-Type": "application/json" });
+		res.end(JSON.stringify({ error: e.message, code: "CREATE_FAILED" }));
+	}
+}
+
+async function handleChatDetail(req, res, id) {
+	try {
+		const chat = await loadChat(id);
+		if (!chat) {
+			res.writeHead(404, { "Content-Type": "application/json" });
+			return res.end(
+				JSON.stringify({
+					error: "Chat not found",
+					code: "CHAT_NOT_FOUND",
+				}),
+			);
+		}
+		res.writeHead(200, { "Content-Type": "application/json" });
+		res.end(JSON.stringify({ chat }));
+	} catch (e) {
+		res.writeHead(500, { "Content-Type": "application/json" });
+		res.end(JSON.stringify({ error: e.message, code: "DATA_READ_ERROR" }));
+	}
+}
+
+async function handleChatDelete(req, res, id) {
+	try {
+		await deleteChat(id);
+		res.writeHead(200, { "Content-Type": "application/json" });
+		res.end(JSON.stringify({ success: true, id }));
+	} catch (e) {
+		res.writeHead(500, { "Content-Type": "application/json" });
+		res.end(JSON.stringify({ error: e.message, code: "DELETE_FAILED" }));
+	}
+}
+
+async function handleChatUpdate(req, res, id) {
+	try {
+		let body = "";
+		req.on("data", (chunk) => (body += chunk));
+		req.on("end", async () => {
+			try {
+				const updates = body ? JSON.parse(body) : {};
+				const chat = await updateChat(id, updates);
+				res.writeHead(200, { "Content-Type": "application/json" });
+				res.end(JSON.stringify({ chat }));
+			} catch (e) {
+				res.writeHead(400, { "Content-Type": "application/json" });
+				res.end(JSON.stringify({ error: e.message, code: "UPDATE_FAILED" }));
+			}
+		});
+	} catch (e) {
+		res.writeHead(500, { "Content-Type": "application/json" });
+		res.end(JSON.stringify({ error: e.message, code: "UPDATE_FAILED" }));
+	}
+}
+
+async function handleChatStream(req, res, url) {
+	const chatId = url.searchParams.get("chatId");
+	const message = url.searchParams.get("message");
+	const cwd = url.searchParams.get("cwd") || process.cwd();
+
+	if (!chatId || !message) {
+		res.writeHead(400, { "Content-Type": "application/json" });
+		return res.end(
+			JSON.stringify({
+				error: "Missing required parameters: chatId, message",
+				code: "MISSING_PARAMS",
+			}),
+		);
+	}
+
+	// Set up SSE headers
+	res.writeHead(200, {
+		"Content-Type": "text/event-stream",
+		"Cache-Control": "no-cache",
+		Connection: "keep-alive",
+	});
+
+	// Send initial connection event
+	res.write(`event: connected\ndata: ${JSON.stringify({ chatId })}\n\n`);
+
+	try {
+		// Stream response
+		const stream = chatService.streamResponse(chatId, message, cwd);
+
+		for await (const event of stream) {
+			res.write(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
+
+			// End stream on completion or error
+			if (event.type === "done" || event.type === "error") {
+				break;
+			}
+		}
+	} catch (e) {
+		res.write(
+			`event: error\ndata: ${JSON.stringify({ message: e.message })}\n\n`,
+		);
+	} finally {
+		res.end();
+	}
 }
 
 function serveFile(res, filePath, ext) {

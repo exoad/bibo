@@ -18,6 +18,72 @@ export class ChatService extends EventEmitter {
 	constructor() {
 		super();
 		this.activeStreams = new Map(); // chatId -> abort controller
+		this.sessions = new Map(); // chatId -> persistent pi process
+	}
+
+	/**
+	 * Get or create a persistent pi session for a chat
+	 */
+	getOrCreateSession(chatId, cwd) {
+		if (this.sessions.has(chatId)) {
+			const session = this.sessions.get(chatId);
+			// Check if process is still alive
+			if (session.process.exitCode === null && !session.process.killed) {
+				return session;
+			}
+			// Process died, clean up
+			this.sessions.delete(chatId);
+		}
+
+		// Create new persistent session
+		const piPath = join(HOME, ".pi", "bin", "pi");
+		const child = spawn(piPath, [], {
+			cwd,
+			env: { ...process.env, PI_NON_INTERACTIVE: "1", PI_SESSION_MODE: "1" },
+		});
+
+		const session = {
+			process: child,
+			chatId,
+			buffer: "",
+			responseBuffer: "",
+			waitingForResponse: false,
+			messageQueue: [],
+		};
+
+		// Handle stdout
+		child.stdout.on("data", (data) => {
+			session.responseBuffer += data.toString();
+		});
+
+		// Handle stderr
+		child.stderr.on("data", (data) => {
+			console.error(`[pi session ${chatId}]:`, data.toString());
+		});
+
+		// Handle process exit
+		child.on("close", (code) => {
+			console.log(`[pi session ${chatId}] exited with code ${code}`);
+			this.sessions.delete(chatId);
+		});
+
+		// Send initial context to establish session
+		child.stdin.write("# Session started\n");
+
+		this.sessions.set(chatId, session);
+		return session;
+	}
+
+	/**
+	 * End a persistent session
+	 */
+	endSession(chatId) {
+		const session = this.sessions.get(chatId);
+		if (session) {
+			session.process.stdin.end();
+			session.process.kill();
+			this.sessions.delete(chatId);
+		}
 	}
 
 	/**
@@ -56,7 +122,12 @@ export class ChatService extends EventEmitter {
 			const toolCalls = [];
 
 			// Stream from agent using pi CLI
-			const stream = this.streamFromAgent(conversationContext, cwd, abortController.signal);
+			const stream = this.streamFromAgent(
+				chatId,
+				conversationContext,
+				cwd,
+				abortController.signal,
+			);
 
 			for await (const event of stream) {
 				if (abortController.signal.aborted) {
@@ -87,7 +158,11 @@ export class ChatService extends EventEmitter {
 							tc.status = "completed";
 							tc.endTime = new Date().toISOString();
 						}
-						yield { type: "tool_result", toolId: event.toolId, result: event.result };
+						yield {
+							type: "tool_result",
+							toolId: event.toolId,
+							result: event.result,
+						};
 						break;
 					}
 
@@ -98,7 +173,11 @@ export class ChatService extends EventEmitter {
 							tc2.status = "error";
 							tc2.endTime = new Date().toISOString();
 						}
-						yield { type: "tool_error", toolId: event.toolId, error: event.error };
+						yield {
+							type: "tool_error",
+							toolId: event.toolId,
+							error: event.error,
+						};
 						break;
 					}
 
@@ -168,68 +247,87 @@ export class ChatService extends EventEmitter {
 	}
 
 	/**
-	 * Stream response from the agent using pi CLI
+	 * Stream response from the agent using persistent pi session
 	 */
-	async *streamFromAgent(context, cwd, signal) {
+	async *streamFromAgent(chatId, context, cwd, signal) {
+		const session = this.getOrCreateSession(chatId, cwd);
 		const lastMessage = context[context.length - 1];
 		const prompt = lastMessage?.content || "";
 
-		// Spawn pi CLI with the prompt
-		const piPath = join(HOME, ".pi", "bin", "pi");
-		const child = spawn(piPath, ["--stdin"], {
-			cwd,
-			env: { ...process.env, PI_NON_INTERACTIVE: "1" },
-		});
+		// Clear previous response buffer
+		session.responseBuffer = "";
+		session.waitingForResponse = true;
 
-		let buffer = "";
-		let finished = false;
+		// Build conversation context for the agent
+		// Send previous messages as context, then the new prompt
+		const contextMessages = context.slice(0, -1); // All except last
 
-		// Write prompt to stdin
-		child.stdin.write(prompt + "\n");
-		child.stdin.end();
+		// Send context as a formatted conversation
+		if (contextMessages.length > 0) {
+			session.process.stdin.write("# Previous conversation:\n");
+			for (const msg of contextMessages) {
+				const role = msg.role === "user" ? "User" : "Assistant";
+				session.process.stdin.write(`${role}: ${msg.content}\n`);
+			}
+			session.process.stdin.write("\n# New message:\n");
+		}
 
-		// Handle stdout data
-		child.stdout.on("data", (data) => {
-			buffer += data.toString();
-		});
+		// Send the new prompt
+		session.process.stdin.write(`${prompt}\n`);
 
-		// Handle stderr (for debugging)
-		child.stderr.on("data", (data) => {
-			console.error("pi stderr:", data.toString());
-		});
+		// Wait for and stream the response
+		let lastYieldTime = Date.now();
+		const startTime = Date.now();
+		const timeout = 120000; // 2 minute timeout
 
-		// Handle process exit
-		child.on("close", (code) => {
-			finished = true;
-		});
-
-		// Stream buffer content
-		while (!finished || buffer.length > 0) {
+		while (session.waitingForResponse) {
 			if (signal.aborted) {
-				child.kill();
+				session.waitingForResponse = false;
 				return;
 			}
 
-			// Find complete lines or words to yield
+			// Check timeout
+			if (Date.now() - startTime > timeout) {
+				session.waitingForResponse = false;
+				yield { type: "error", message: "Response timeout" };
+				return;
+			}
+
+			// Check if we have content to yield
+			const buffer = session.responseBuffer;
 			const newlineIndex = buffer.indexOf("\n");
 			const spaceIndex = buffer.indexOf(" ");
 
 			if (newlineIndex !== -1) {
 				const line = buffer.substring(0, newlineIndex + 1);
-				buffer = buffer.substring(newlineIndex + 1);
+				session.responseBuffer = buffer.substring(newlineIndex + 1);
 				yield { type: "content", content: line };
-			} else if (spaceIndex !== -1 && buffer.length > 80) {
-				// Yield word by word if no newline and buffer getting long
+				lastYieldTime = Date.now();
+			} else if (spaceIndex !== -1 && buffer.length > 100) {
+				// Yield word by word if buffer getting long
 				const word = buffer.substring(0, spaceIndex + 1);
-				buffer = buffer.substring(spaceIndex + 1);
+				session.responseBuffer = buffer.substring(spaceIndex + 1);
 				yield { type: "content", content: word };
-			} else if (finished && buffer.length > 0) {
-				// Yield remaining buffer when done
+				lastYieldTime = Date.now();
+			} else if (buffer.length > 0 && Date.now() - lastYieldTime > 500) {
+				// Yield remaining content if no new data for 500ms
+				session.responseBuffer = "";
 				yield { type: "content", content: buffer };
-				buffer = "";
+				lastYieldTime = Date.now();
 			} else {
 				// Wait for more data
 				await new Promise((r) => setTimeout(r, 50));
+			}
+
+			// Check if process has ended
+			if (session.process.exitCode !== null || session.process.killed) {
+				// Process ended, yield remaining buffer
+				if (session.responseBuffer.length > 0) {
+					yield { type: "content", content: session.responseBuffer };
+				}
+				session.waitingForResponse = false;
+				this.sessions.delete(chatId);
+				break;
 			}
 		}
 

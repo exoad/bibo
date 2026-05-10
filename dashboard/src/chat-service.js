@@ -79,7 +79,7 @@ export class ChatService extends EventEmitter {
 						yield { type: "tool_call", tool: event.tool };
 						break;
 
-					case "tool_result":
+					case "tool_result": {
 						// Update tool call with result
 						const tc = toolCalls.find((t) => t.id === event.toolId);
 						if (tc) {
@@ -89,8 +89,9 @@ export class ChatService extends EventEmitter {
 						}
 						yield { type: "tool_result", toolId: event.toolId, result: event.result };
 						break;
+					}
 
-					case "tool_error":
+					case "tool_error": {
 						const tc2 = toolCalls.find((t) => t.id === event.toolId);
 						if (tc2) {
 							tc2.error = event.error;
@@ -99,12 +100,13 @@ export class ChatService extends EventEmitter {
 						}
 						yield { type: "tool_error", toolId: event.toolId, error: event.error };
 						break;
+					}
 
 					case "error":
 						yield { type: "error", message: event.message };
 						return;
 
-					case "done":
+					case "done": {
 						// Save assistant message
 						const assistantMsg = {
 							id: assistantMsgId,
@@ -123,6 +125,7 @@ export class ChatService extends EventEmitter {
 
 						yield { type: "done", message: assistantMsg };
 						return;
+					}
 				}
 			}
 		} catch (error) {
@@ -168,22 +171,66 @@ export class ChatService extends EventEmitter {
 	 * Stream response from the agent using pi CLI
 	 */
 	async *streamFromAgent(context, cwd, signal) {
-		// For now, use a simple implementation that calls the pi CLI
-		// In production, this would use a direct API to the agent core
-
 		const lastMessage = context[context.length - 1];
 		const prompt = lastMessage?.content || "";
 
-		// Simulate streaming for now - in production this would be real
-		// This is a placeholder that yields content word by word
-		const response = `I'll help you with that. Let me check what I can do for you.`;
-		const words = response.split(" ");
+		// Spawn pi CLI with the prompt
+		const piPath = join(HOME, ".pi", "bin", "pi");
+		const child = spawn(piPath, ["--stdin"], {
+			cwd,
+			env: { ...process.env, PI_NON_INTERACTIVE: "1" },
+		});
 
-		for (const word of words) {
-			if (signal.aborted) return;
-			yield { type: "content", content: word + " " };
-			// Small delay to simulate streaming
-			await new Promise((r) => setTimeout(r, 50));
+		let buffer = "";
+		let finished = false;
+
+		// Write prompt to stdin
+		child.stdin.write(prompt + "\n");
+		child.stdin.end();
+
+		// Handle stdout data
+		child.stdout.on("data", (data) => {
+			buffer += data.toString();
+		});
+
+		// Handle stderr (for debugging)
+		child.stderr.on("data", (data) => {
+			console.error("pi stderr:", data.toString());
+		});
+
+		// Handle process exit
+		child.on("close", (code) => {
+			finished = true;
+		});
+
+		// Stream buffer content
+		while (!finished || buffer.length > 0) {
+			if (signal.aborted) {
+				child.kill();
+				return;
+			}
+
+			// Find complete lines or words to yield
+			const newlineIndex = buffer.indexOf("\n");
+			const spaceIndex = buffer.indexOf(" ");
+
+			if (newlineIndex !== -1) {
+				const line = buffer.substring(0, newlineIndex + 1);
+				buffer = buffer.substring(newlineIndex + 1);
+				yield { type: "content", content: line };
+			} else if (spaceIndex !== -1 && buffer.length > 80) {
+				// Yield word by word if no newline and buffer getting long
+				const word = buffer.substring(0, spaceIndex + 1);
+				buffer = buffer.substring(spaceIndex + 1);
+				yield { type: "content", content: word };
+			} else if (finished && buffer.length > 0) {
+				// Yield remaining buffer when done
+				yield { type: "content", content: buffer };
+				buffer = "";
+			} else {
+				// Wait for more data
+				await new Promise((r) => setTimeout(r, 50));
+			}
 		}
 
 		yield { type: "done" };

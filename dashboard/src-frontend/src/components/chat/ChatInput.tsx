@@ -66,7 +66,8 @@ export function ChatInput({ isStreaming, disabled }: ChatInputProps) {
 	);
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
-		if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+		// Enter to send, Shift+Enter for new line
+		if (e.key === "Enter" && !e.shiftKey) {
 			e.preventDefault();
 			handleSend();
 		}
@@ -97,7 +98,7 @@ export function ChatInput({ isStreaming, disabled }: ChatInputProps) {
 	};
 
 	return (
-		<div className="border-t border-bg2 px-2 py-1.5 bg-bg0-hard relative">
+		<div className="border-t border-bg2 py-2 bg-bg0-hard relative">
 			{/* Slash command dropdown */}
 			<SlashCommandDropdown
 				input={input}
@@ -106,7 +107,7 @@ export function ChatInput({ isStreaming, disabled }: ChatInputProps) {
 				visible={showSlashMenu}
 			/>
 
-			<div className="flex gap-1.5">
+			<div className="flex gap-2 items-end px-4">
 				<textarea
 					ref={textareaRef}
 					value={input}
@@ -121,17 +122,17 @@ export function ChatInput({ isStreaming, disabled }: ChatInputProps) {
 					placeholder={
 						disabled
 							? "Select a chat to start..."
-							: "Message... (/ commands, Ctrl+Enter send)"
+							: "Message... (Enter to send, Shift+Enter for new line)"
 					}
 					disabled={disabled || isStreaming}
 					rows={1}
-					className="flex-1 bg-bg0 border border-bg2 px-2 py-1.5 text-xs text-fg1 placeholder:text-fg4 resize-none min-h-[32px] max-h-[160px] focus:outline-none focus:border-green disabled:opacity-50 disabled:cursor-not-allowed"
+					className="flex-1 bg-bg0 border border-bg2 px-3 py-2 text-sm text-fg1 placeholder:text-fg4 resize-none min-h-[40px] max-h-[200px] focus:outline-none focus:border-green disabled:opacity-50 disabled:cursor-not-allowed leading-relaxed"
 				/>
 
 				{isStreaming ? (
 					<button
 						onClick={stopStreaming}
-						className="px-2 py-1.5 bg-red text-bg0-hard hover:bg-red/90 flex items-center gap-1"
+						className="px-3 py-2 bg-red text-bg0-hard hover:bg-red/90 flex items-center gap-1 self-end h-[40px]"
 						title="Stop generating"
 					>
 						<Stop className="w-4 h-4" />
@@ -140,8 +141,8 @@ export function ChatInput({ isStreaming, disabled }: ChatInputProps) {
 					<button
 						onClick={handleSend}
 						disabled={!input.trim() || disabled}
-						className="px-2 py-1.5 bg-green text-bg0-hard disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green/90 flex items-center gap-1"
-						title="Send message (Ctrl+Enter)"
+						className="px-3 py-2 bg-green text-bg0-hard disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green/90 flex items-center gap-1 self-end h-[40px]"
+						title="Send message (Enter)"
 					>
 						<PaperPlaneRight className="w-4 h-4" />
 					</button>
@@ -152,7 +153,7 @@ export function ChatInput({ isStreaming, disabled }: ChatInputProps) {
 				<span>
 					{disabled
 						? "Select or create a chat to begin"
-						: "/ commands · Ctrl+Enter send"}
+						: "/ commands · Enter to send, Shift+Enter for new line"}
 				</span>
 				{isStreaming && (
 					<span className="text-green animate-pulse">● Generating...</span>

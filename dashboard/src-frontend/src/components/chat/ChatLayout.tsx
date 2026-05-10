@@ -185,11 +185,9 @@ export function ChatLayout({ compact = false }: ChatLayoutProps) {
 							</div>
 						</div>
 
-						{/* Centered Input Area */}
+						{/* Full-width Input Area - connected to bottom */}
 						<div className="border-t border-bg2 bg-bg0-hard">
-							<div className="max-w-3xl mx-auto">
-								<ChatInput isStreaming={isStreaming} disabled={!activeChatId} />
-							</div>
+							<ChatInput isStreaming={isStreaming} disabled={!activeChatId} />
 						</div>
 					</>
 				)}

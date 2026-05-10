@@ -121,19 +121,19 @@ export function ChatInput({ isStreaming, disabled }: ChatInputProps) {
 					onKeyDown={handleKeyDown}
 					placeholder={
 						disabled
-							? "Select a chat to start..."
-							: "Message... (Enter to send, Shift+Enter for new line)"
+							? "Select a chat..."
+							: "Message bibo..."
 					}
 					disabled={disabled || isStreaming}
 					rows={1}
-					className="flex-1 bg-bg0 border border-bg2 px-3 py-2 text-sm text-fg1 placeholder:text-fg4 resize-none min-h-[40px] max-h-[200px] focus:outline-none focus:border-green disabled:opacity-50 disabled:cursor-not-allowed leading-relaxed"
+					className="flex-1 bg-bg0 border border-bg2 px-3 py-2 text-sm text-fg1 placeholder:text-fg4/60 resize-none min-h-[40px] max-h-[200px] focus:outline-none focus:border-green disabled:opacity-50 disabled:cursor-not-allowed leading-relaxed"
 				/>
 
 				{isStreaming ? (
 					<button
 						onClick={stopStreaming}
 						className="px-3 py-2 bg-red text-bg0-hard hover:bg-red/90 flex items-center gap-1 self-end h-[40px]"
-						title="Stop generating"
+						title="Stop"
 					>
 						<Stop className="w-4 h-4" />
 					</button>
@@ -142,23 +142,18 @@ export function ChatInput({ isStreaming, disabled }: ChatInputProps) {
 						onClick={handleSend}
 						disabled={!input.trim() || disabled}
 						className="px-3 py-2 bg-green text-bg0-hard disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green/90 flex items-center gap-1 self-end h-[40px]"
-						title="Send message (Enter)"
+						title="Send"
 					>
 						<PaperPlaneRight className="w-4 h-4" />
 					</button>
 				)}
 			</div>
 
-			<div className="flex justify-between items-center mt-1 text-[10px] text-fg4">
-				<span>
-					{disabled
-						? "Select or create a chat to begin"
-						: "/ commands · Enter to send, Shift+Enter for new line"}
-				</span>
-				{isStreaming && (
-					<span className="text-green animate-pulse">● Generating...</span>
-				)}
+			{isStreaming && (
+			<div className="flex justify-end px-4 pb-2">
+				<span className="text-[10px] text-green animate-pulse">● Generating...</span>
 			</div>
+		)}
 		</div>
 	);
 }

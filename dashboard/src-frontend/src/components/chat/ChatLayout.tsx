@@ -100,29 +100,26 @@ export function ChatLayout({ compact = false }: ChatLayoutProps) {
 		<div className="h-full flex flex-col bg-bg0 relative">
 			{/* Top Navigation Bar */}
 			<header className="flex items-center justify-between px-4 py-2 border-b border-bg2 bg-bg0-hard">
-				<div className="flex items-center gap-2">
-					<button
-						onClick={() => setShowSidebar(!showSidebar)}
-						className="p-1.5 text-fg4 hover:text-fg2 hover:bg-bg1"
-						title="Chat history"
-					>
-						<List className="w-4 h-4" />
-					</button>
-					<span className="text-xs font-medium text-fg3">Chat</span>
-				</div>
+				<button
+					onClick={() => setShowSidebar(!showSidebar)}
+					className="p-1.5 text-fg4 hover:text-fg2 hover:bg-bg1"
+					title="History"
+				>
+					<List className="w-4 h-4" />
+				</button>
 
 				<div className="flex items-center gap-2">
 					{activeChatId && (
 						<span className="text-[10px] text-fg4 truncate max-w-[200px]">
-							{chats.find((c) => c.id === activeChatId)?.title || "Chat"}
+							{chats.find((c) => c.id === activeChatId)?.title}
 						</span>
 					)}
 					<button
 						onClick={handleNewChat}
-						className="flex items-center gap-1 px-2 py-1 bg-green text-bg0-hard text-xs font-medium hover:bg-green/90"
+						className="p-1.5 bg-green text-bg0-hard hover:bg-green/90"
+						title="New chat"
 					>
-						<Plus className="w-3 h-3" />
-						<span>New</span>
+						<Plus className="w-4 h-4" />
 					</button>
 				</div>
 			</header>

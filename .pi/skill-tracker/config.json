@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "data_file": "usage.jsonl",
+  "auto_prompt_for_correctness": true,
+  "prompt_threshold_seconds": 300,
+  "report_defaults": {
+    "max_entries": 100,
+    "sort_by": "count",
+    "include_unused": true
+  }
+}

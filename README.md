@@ -16,6 +16,8 @@ Fortified with industry-grade system prompts from Claude & OpenCode
 
 </div>
 
+**Public Bibo is not supported by me anymore. Fork it and make bibo your own!**
+
 ## My Server
 
 - **GPU 1:** NVIDIA V100 SXM2 (w/ PCIe Adaptor) 32GB for attention layers
